@@ -37,12 +37,14 @@ const EmployeeList = () => {
     department: '',
     designation: '',
     role: 'EMPLOYEE',
-    salary: 0
+    salary: 0,
+    managerId: ''
   });
 
   const [csvText, setCsvText] = useState('');
   const [formError, setFormError] = useState('');
   const [feedback, setFeedback] = useState('');
+  const [managersList, setManagersList] = useState([]);
 
   // Fetch employees list
   const fetchEmployees = async () => {
@@ -66,6 +68,26 @@ const EmployeeList = () => {
     fetchEmployees();
   }, [page, search, deptFilter]);
 
+  // Fetch potential managers for the dropdown
+  useEffect(() => {
+    const fetchManagers = async () => {
+      try {
+        const res = await api.get('/employees', { params: { limit: 200 } });
+        if (res.data.success) {
+          // Sort: MANAGER/HR_ADMIN/LEADERSHIP first
+          const sorted = res.data.data.sort((a, b) => {
+            const priority = { LEADERSHIP: 0, HR_ADMIN: 1, MANAGER: 2, EMPLOYEE: 3 };
+            return (priority[a.role] ?? 4) - (priority[b.role] ?? 4);
+          });
+          setManagersList(sorted);
+        }
+      } catch (err) {
+        console.error('Failed to fetch managers list:', err);
+      }
+    };
+    fetchManagers();
+  }, [employees]);
+
   const handleOpenAdd = () => {
     setFormFields({
       firstName: '',
@@ -76,7 +98,8 @@ const EmployeeList = () => {
       department: '',
       designation: '',
       role: 'EMPLOYEE',
-      salary: 0
+      salary: 0,
+      managerId: ''
     });
     setFormError('');
     setShowAddModal(true);
@@ -93,7 +116,8 @@ const EmployeeList = () => {
       designation: emp.designation,
       role: emp.role || 'EMPLOYEE',
       salary: emp.salary || 0,
-      status: emp.status
+      status: emp.status,
+      managerId: emp.managerId?._id || emp.managerId || ''
     });
     setFormError('');
     setShowEditModal(true);
@@ -103,7 +127,12 @@ const EmployeeList = () => {
     e.preventDefault();
     setFormError('');
     try {
-      const res = await api.post('/employees', formFields);
+      const payload = { ...formFields };
+      if (payload.managerId && typeof payload.managerId === 'object') {
+        payload.managerId = payload.managerId._id;
+      }
+      if (!payload.managerId) payload.managerId = null;
+      const res = await api.post('/employees', payload);
       if (res.data.success) {
         setShowAddModal(false);
         fetchEmployees();
@@ -120,7 +149,12 @@ const EmployeeList = () => {
     e.preventDefault();
     setFormError('');
     try {
-      const res = await api.put(`/employees/${selectedEmp._id}`, formFields);
+      const payload = { ...formFields };
+      if (payload.managerId && typeof payload.managerId === 'object') {
+        payload.managerId = payload.managerId._id;
+      }
+      if (!payload.managerId) payload.managerId = null;
+      const res = await api.put(`/employees/${selectedEmp._id}`, payload);
       if (res.data.success) {
         setShowEditModal(false);
         fetchEmployees();
@@ -492,6 +526,23 @@ const EmployeeList = () => {
                   </div>
                 </div>
 
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-textSecondary uppercase tracking-wider">Reporting Manager</label>
+                  <select
+                    value={formFields.managerId}
+                    onChange={(e) => setFormFields({ ...formFields, managerId: e.target.value })}
+                    className="w-full h-10 px-3 border border-borderColor rounded-input text-xs focus:outline-none focus:border-primary bg-transparent"
+                  >
+                    <option value="">— No Manager —</option>
+                    {managersList.map((m) => (
+                      <option key={m._id} value={m._id}>
+                        {m.firstName} {m.lastName} ({m.role} — {m.department})
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-[10px] text-textSecondary">Required for leave approval routing</span>
+                </div>
+
                 <div className="pt-4 flex justify-end gap-3 border-t border-borderColor">
                   <button
                     type="button"
@@ -625,6 +676,24 @@ const EmployeeList = () => {
                       className="w-full h-10 px-3 border border-borderColor rounded-input text-xs focus:outline-none focus:border-primary"
                     />
                   </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-textSecondary uppercase tracking-wider">Reporting Manager</label>
+                  <select
+                    value={formFields.managerId}
+                    onChange={(e) => setFormFields({ ...formFields, managerId: e.target.value })}
+                    className="w-full h-10 px-3 border border-borderColor rounded-input text-xs focus:outline-none focus:border-primary bg-transparent"
+                  >
+                    <option value="">— No Manager —</option>
+                    {managersList
+                      .filter((m) => m._id !== selectedEmp?._id)
+                      .map((m) => (
+                        <option key={m._id} value={m._id}>
+                          {m.firstName} {m.lastName} ({m.role} — {m.department})
+                        </option>
+                      ))}
+                  </select>
                 </div>
 
                 <div className="pt-4 flex justify-end gap-3 border-t border-borderColor">

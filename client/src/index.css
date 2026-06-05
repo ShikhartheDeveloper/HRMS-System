@@ -90,3 +90,99 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* Ripple Animation */
+@keyframes ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+.animate-ripple {
+  transform: scale(0);
+  animation: ripple 600ms linear;
+}
+
+/* Conic border glow path animation */
+@keyframes border-glow {
+  from {
+    stroke-dashoffset: 360;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.animate-border-glow {
+  animation: border-glow 5s linear infinite;
+}
+
+/* SVG Logo arc draw animation */
+@keyframes draw-logo {
+  0% {
+    stroke-dashoffset: 160;
+    fill-opacity: 0;
+  }
+  70% {
+    stroke-dashoffset: 0;
+    fill-opacity: 0;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    fill-opacity: 0.15;
+  }
+}
+.animate-logo-draw {
+  animation: draw-logo 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes logo-text-fade {
+  to {
+    opacity: 1;
+  }
+}
+.animate-logo-text {
+  animation: logo-text-fade 0.8s ease-out 1.8s forwards;
+}
+
+/* Glitch aberration keyframes */
+@keyframes glitch-skew {
+  0%, 100% { transform: skew(0deg); }
+  20% { transform: skew(-1deg); }
+  40% { transform: skew(1.5deg); }
+  60% { transform: skew(-0.5deg); }
+  80% { transform: skew(1deg); }
+}
+.animate-glitch {
+  animation: glitch-skew 1s step-end infinite;
+}
+
+/* Laser scan animation */
+@keyframes laser-scan {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.animate-laser-scan {
+  animation: laser-scan 4s linear infinite;
+}
+
+/* Liquid Metal movement */
+@keyframes liquid-metal {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+.animate-liquid-metal {
+  background-size: 200% 200%;
+  animation: liquid-metal 3s ease infinite;
+}
+

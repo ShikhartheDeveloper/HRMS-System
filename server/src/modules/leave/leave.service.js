@@ -130,7 +130,7 @@ export const applyLeave = async (userId, leaveDetails, tenantId) => {
     status: 'Pending'
   });
 
-  // Notify Manager
+  // Notify Manager (or fall back to all HR_ADMINs if no manager assigned)
   if (employee.managerId) {
     const manager = await Employee.findById(employee.managerId).select('userId email');
     if (manager) {
@@ -149,6 +149,18 @@ export const applyLeave = async (userId, leaveDetails, tenantId) => {
           text: `Hello,\n\n${employee.firstName} ${employee.lastName} has requested ${totalDays} day(s) of ${leaveType} leave starting from ${startDate} to ${endDate}.\n\nReason: ${reason}\n\nPlease review and action this request in the approvals queue.\n\nBest regards,\nHRMS Portal`
         }).catch(err => console.error('Failed to send leave request email to manager:', err));
       }
+    }
+  } else {
+    // No manager assigned — notify all HR_ADMINs in this tenant
+    const hrAdmins = await Employee.find({ tenantId, role: 'HR_ADMIN' }).select('userId email');
+    for (const admin of hrAdmins) {
+      await Notification.create({
+        tenantId,
+        userId: admin.userId,
+        title: 'New Leave Application (No Manager)',
+        content: `${employee.firstName} ${employee.lastName} has applied for ${totalDays} day(s) of ${leaveType} leave. This employee has no manager assigned.`,
+        type: 'APPROVAL'
+      });
     }
   }
 

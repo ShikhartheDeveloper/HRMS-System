@@ -11,8 +11,8 @@ import employeeRoutes from './modules/employees/employee.routes.js';
 import attendanceRoutes from './modules/attendance/attendance.routes.js';
 import leaveRoutes from './modules/leave/leave.routes.js';
 import reportRoutes from './modules/reports/report.routes.js';
-import uploadRoutes from './modules/uploads/upload.routes.js';
 import notificationRoutes from './modules/notifications/notification.routes.js';
+import uploadRoutes from './modules/uploads/upload.routes.js';
 
 import path from 'path';
 
@@ -50,8 +50,8 @@ app.use('/api/employees', employeeRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/leave', leaveRoutes);
 app.use('/api/reports', reportRoutes);
-app.use('/api/uploads', uploadRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/uploads', uploadRoutes);
 
 // 404 Route handler
 app.use((req, res) => {

@@ -5,18 +5,17 @@ import api from '../../services/api';
 import { User, Mail, Shield, BadgeCheck, Phone, Briefcase, Landmark, Camera, Loader2 } from 'lucide-react';
 
 const Profile = () => {
-  const { user } = useAuthStore();
+  const { user, profileImageUrl, setProfileImageUrl } = useAuthStore();
   const fileInputRef = useRef(null);
-  const [profileImageUrl, setProfileImageUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState('');
 
   // Fetch profile image on mount
   useEffect(() => {
-    if (user?.employee?._id) {
+    if (user?.employee?._id && !profileImageUrl) {
       fetchProfileImage();
     }
-  }, [user?.employee?._id]);
+  }, [user?.employee?._id, profileImageUrl]);
 
   const fetchProfileImage = async () => {
     try {

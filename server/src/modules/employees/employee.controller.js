@@ -43,7 +43,7 @@ export const getEmployees = async (req, res, next) => {
     // Resolve profile image URLs for list view
     const formattedData = await Promise.all(
       results.data.map(async (emp) => {
-        const empObj = emp.toObject();
+        const empObj = { ...emp };
         if (empObj.profileImageUrl) {
           empObj.profileImageUrl = await resolveProfileImageUrl(empObj.profileImageUrl);
         }

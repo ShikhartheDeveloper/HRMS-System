@@ -4,6 +4,7 @@ const useAuthStore = create((set) => ({
   user: null,
   token: null,
   tenant: null, // Holds { id, name, subdomain }
+  profileImageUrl: null,
   isAuthenticated: false,
   isInitialized: false,
 
@@ -23,10 +24,13 @@ const useAuthStore = create((set) => ({
     set({ tenant });
   },
 
+  setProfileImageUrl: (profileImageUrl) => set({ profileImageUrl }),
+
   clearAuth: () => {
     set({
       user: null,
       token: null,
+      profileImageUrl: null,
       isAuthenticated: false,
       isInitialized: true
     });

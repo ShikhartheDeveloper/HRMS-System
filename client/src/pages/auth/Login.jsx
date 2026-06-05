@@ -1,16 +1,133 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
 import api from '../../services/api';
 import AuthLayout from '../../components/layout/AuthLayout';
-import { AlertCircle, ArrowRight, ArrowLeft, Building, Key, Mail, ShieldAlert, Lock } from 'lucide-react';
+import { AlertCircle, ArrowRight, ArrowLeft, ShieldAlert } from 'lucide-react';
+
+/* ─── Liquid Metal CTA Button ─── */
+const LiquidButton = ({ children, onClick, disabled, type = 'submit' }) => {
+  const btnRef = useRef(null);
+  const [particles, setParticles] = useState([]);
+  const [ripples, setRipples] = useState([]);
+
+  const handleClick = (e) => {
+    // Ripple
+    const rect = btnRef.current.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    setRipples((p) => [...p, { x: e.clientX - rect.left - size / 2, y: e.clientY - rect.top - size / 2, size, id: Date.now() }]);
+
+    // Particle burst
+    const burst = [];
+    for (let i = 0; i < 12; i++) {
+      const angle = (Math.PI * 2 * i) / 12;
+      burst.push({
+        id: Date.now() + i,
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+        vx: Math.cos(angle) * (2 + Math.random() * 3),
+        vy: Math.sin(angle) * (2 + Math.random() * 3),
+        size: 1.5 + Math.random() * 2,
+        life: 1,
+      });
+    }
+    setParticles((p) => [...p, ...burst]);
+
+    if (onClick) onClick(e);
+  };
+
+  // Animate particles
+  useEffect(() => {
+    if (particles.length === 0) return;
+    const interval = setInterval(() => {
+      setParticles((prev) =>
+        prev
+          .map((p) => ({ ...p, x: p.x + p.vx, y: p.y + p.vy, life: p.life - 0.04, vy: p.vy + 0.1 }))
+          .filter((p) => p.life > 0)
+      );
+    }, 16);
+    return () => clearInterval(interval);
+  }, [particles.length]);
+
+  return (
+    <button
+      ref={btnRef}
+      type={type}
+      disabled={disabled}
+      onMouseDown={handleClick}
+      className="relative w-full h-12 rounded-xl text-xs font-bold uppercase tracking-widest overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.02] active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none group"
+      style={{
+        background: 'linear-gradient(135deg, #C9A84C 0%, #e8e8e8 40%, #C9A84C 60%, #e8e8e8 100%)',
+        backgroundSize: '200% 200%',
+        animation: 'liquid-metal 3s ease infinite',
+        color: '#050508',
+      }}
+    >
+      {/* Surface ripple on hover */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+        style={{
+          background: 'radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.25) 0%, transparent 60%)',
+        }}
+        onMouseMove={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          e.currentTarget.style.setProperty('--mouse-x', `${((e.clientX - rect.left) / rect.width) * 100}%`);
+          e.currentTarget.style.setProperty('--mouse-y', `${((e.clientY - rect.top) / rect.height) * 100}%`);
+        }}
+      />
+
+      {/* Click ripples */}
+      {ripples.map((r) => (
+        <span
+          key={r.id}
+          className="absolute rounded-full bg-white/30 animate-ripple pointer-events-none"
+          onAnimationEnd={() => setRipples((prev) => prev.filter((x) => x.id !== r.id))}
+          style={{ left: r.x, top: r.y, width: r.size, height: r.size }}
+        />
+      ))}
+
+      {/* Particle burst */}
+      {particles.map((p) => (
+        <span
+          key={p.id}
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            left: p.x, top: p.y,
+            width: p.size, height: p.size,
+            background: '#C9A84C',
+            opacity: p.life,
+            boxShadow: `0 0 4px #C9A84C`,
+          }}
+        />
+      ))}
+
+      <span className="relative z-10 flex items-center justify-center gap-2">{children}</span>
+    </button>
+  );
+};
+
+/* ─── Neon Input Wrapper ─── */
+const NeonInput = ({ icon: Icon, ...props }) => (
+  <div className="relative group">
+    <div className="relative flex items-center h-12 bg-white/[0.03] border-b border-white/10 group-focus-within:border-transparent transition-all duration-300">
+      {Icon && <Icon className="absolute left-0 h-4 w-4 text-white/25 group-focus-within:text-[#00F5D4] transition-colors duration-300" />}
+      <input
+        {...props}
+        className={`w-full h-full ${Icon ? 'pl-7' : 'pl-0'} pr-3 text-xs bg-transparent text-[#E8F4F8] font-medium placeholder:text-white/20 focus:outline-none`}
+      />
+    </div>
+    {/* Neon underline */}
+    <div className="absolute bottom-0 left-0 h-[1.5px] w-0 group-focus-within:w-full transition-all duration-500 ease-out"
+      style={{ background: 'linear-gradient(90deg, #00F5D4, #7B2FBE)' }}
+    />
+  </div>
+);
 
 const Login = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { setAuth, tenant, setTenant } = useAuthStore();
 
-  const [step, setStep] = useState(1); // 1: Subdomain, 2: Credentials, 3: SSO Email, 4: SSO OTP
+  const [step, setStep] = useState(1);
   const [subdomain, setSubdomain] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,476 +135,271 @@ const Login = () => {
   const [error, setError] = useState('');
   const [lockoutMsg, setLockoutMsg] = useState('');
 
-  const [ssoProvider, setSsoProvider] = useState(''); // 'google' or 'microsoft'
+  const [ssoProvider, setSsoProvider] = useState('');
   const [ssoEmail, setSsoEmail] = useState('');
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
   const [countdown, setCountdown] = useState(0);
 
-  // Handle OTP Resend countdown
   useEffect(() => {
     let timer;
-    if (countdown > 0) {
-      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-    }
+    if (countdown > 0) timer = setTimeout(() => setCountdown(countdown - 1), 1000);
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  // Handle SSO redirect callbacks
   useEffect(() => {
     const ssoToken = searchParams.get('token');
     const ssoError = searchParams.get('error');
-
     if (ssoToken) {
       setLoading(true);
-      api.post('/auth/refresh')
-        .then((res) => {
-          if (res.data.success) {
-            setAuth(res.data.data.user, ssoToken);
-            navigate('/dashboard');
-          }
-        })
-        .catch(() => setError('SSO login validation failed'))
-        .finally(() => setLoading(false));
+      api.post('/auth/refresh').then((res) => {
+        if (res.data.success) { setAuth(res.data.data.user, ssoToken); navigate('/dashboard'); }
+      }).catch(() => setError('SSO login validation failed')).finally(() => setLoading(false));
     }
-
-    if (ssoError) {
-      if (ssoError === 'subdomain_missing') setError('Subdomain missing for SSO');
-      else if (ssoError === 'tenant_not_found') setError('Tenant not found');
-      else setError('Single Sign-On failed. Please try again.');
-    }
+    if (ssoError) setError(ssoError === 'subdomain_missing' ? 'Subdomain missing' : ssoError === 'tenant_not_found' ? 'Tenant not found' : 'SSO failed');
   }, [searchParams, setAuth, navigate]);
 
-  // Try to load subdomain from localStorage
   useEffect(() => {
-    const savedSubdomain = localStorage.getItem('hrms_subdomain');
-    if (savedSubdomain) {
-      setSubdomain(savedSubdomain);
-    }
+    const saved = localStorage.getItem('hrms_subdomain');
+    if (saved) setSubdomain(saved);
   }, []);
 
   const handleLookupSubdomain = async (e) => {
     e.preventDefault();
     if (!subdomain) return setError('Subdomain is required');
-
-    setLoading(true);
-    setError('');
-
+    setLoading(true); setError('');
     try {
       const res = await api.get(`/auth/tenant-lookup?subdomain=${subdomain}`);
-      if (res.data.success) {
-        setTenant(res.data.data);
-        setStep(2);
-      }
-    } catch (err) {
-      setError(err.response?.data?.error?.message || 'Organization subdomain lookup failed');
-    } finally {
-      setLoading(false);
-    }
+      if (res.data.success) { setTenant(res.data.data); localStorage.setItem('hrms_subdomain', subdomain); setStep(2); }
+    } catch (err) { setError(err.response?.data?.error?.message || 'Lookup failed'); }
+    finally { setLoading(false); }
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     if (!email || !password) return setError('All fields are required');
-
-    setLoading(true);
-    setError('');
-    setLockoutMsg('');
-
+    setLoading(true); setError(''); setLockoutMsg('');
     try {
-      const res = await api.post('/auth/login', {
-        email,
-        password,
-        tenantId: tenant.id
-      });
-
-      if (res.data.success) {
-        setAuth(res.data.data.user, res.data.data.token);
-        navigate('/dashboard');
-      }
+      const res = await api.post('/auth/login', { email, password, tenantId: tenant.id });
+      if (res.data.success) { setAuth(res.data.data.user, res.data.data.token); navigate('/dashboard'); }
     } catch (err) {
-      const errData = err.response?.data?.error;
-      if (errData?.code === 'ACCOUNT_LOCKED') {
-        setLockoutMsg(errData.message);
-      } else {
-        setError(errData?.message || 'Authentication failed. Please verify your credentials.');
-      }
-    } finally {
-      setLoading(false);
-    }
+      const ed = err.response?.data?.error;
+      if (ed?.code === 'ACCOUNT_LOCKED') setLockoutMsg(ed.message);
+      else setError(ed?.message || 'Authentication failed');
+    } finally { setLoading(false); }
   };
 
   const handleSsoClick = (provider) => {
-    if (!subdomain) return setError('Subdomain is required before SSO');
-    setSsoProvider(provider);
-    setSsoEmail('');
-    setOtpDigits(['', '', '', '', '', '']);
-    setError('');
-    setStep(3); // Go to email input step
+    if (!subdomain) return setError('Enter subdomain first');
+    setSsoProvider(provider); setSsoEmail(''); setOtpDigits(['','','','','','']); setError(''); setStep(3);
   };
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
-    if (!ssoEmail) return setError('Email address is required');
-    
-    // Quick domain validation check for google
-    if (ssoProvider === 'google' && !ssoEmail.endsWith('@gmail.com') && ssoEmail !== 'admin@default.com' && ssoEmail !== 'manager@default.com' && ssoEmail !== 'employee@default.com') {
-      return setError('Please enter a valid Gmail address (e.g. user@gmail.com)');
-    }
-
-    setLoading(true);
-    setError('');
-
+    if (!ssoEmail) return setError('Email required');
+    setLoading(true); setError('');
     try {
-      const res = await api.post('/auth/sso/send-otp', {
-        email: ssoEmail,
-        provider: ssoProvider,
-        subdomain
-      });
-      if (res.data.success) {
-        setStep(4); // Go to OTP verification step
-        setCountdown(60); // 60s cooldown
-        setOtpDigits(['', '', '', '', '', '']);
-      }
-    } catch (err) {
-      setError(err.response?.data?.error?.message || 'Failed to send verification code. Make sure the email is registered in this workspace.');
-    } finally {
-      setLoading(false);
-    }
+      const res = await api.post('/auth/sso/send-otp', { email: ssoEmail, provider: ssoProvider, subdomain });
+      if (res.data.success) { setStep(4); setCountdown(60); setOtpDigits(['','','','','','']); }
+    } catch (err) { setError(err.response?.data?.error?.message || 'Failed to send code'); }
+    finally { setLoading(false); }
   };
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
-    const otpCode = otpDigits.join('');
-    if (otpCode.length < 6) return setError('Please enter the 6-digit verification code');
-
-    setLoading(true);
-    setError('');
-
+    const code = otpDigits.join('');
+    if (code.length < 6) return setError('Enter 6-digit code');
+    setLoading(true); setError('');
     try {
-      const res = await api.post('/auth/sso/verify-otp', {
-        email: ssoEmail,
-        otpCode,
-        subdomain
-      });
-
-      if (res.data.success) {
-        setAuth(res.data.data.user, res.data.data.token);
-        navigate('/dashboard');
-      }
-    } catch (err) {
-      setError(err.response?.data?.error?.message || 'Verification failed. Please check the code and try again.');
-    } finally {
-      setLoading(false);
-    }
+      const res = await api.post('/auth/sso/verify-otp', { email: ssoEmail, otpCode: code, subdomain });
+      if (res.data.success) { setAuth(res.data.data.user, res.data.data.token); navigate('/dashboard'); }
+    } catch (err) { setError(err.response?.data?.error?.message || 'Verification failed'); }
+    finally { setLoading(false); }
   };
 
   const handleResendOtp = async () => {
     if (countdown > 0) return;
-    setLoading(true);
-    setError('');
+    setLoading(true); setError('');
     try {
-      const res = await api.post('/auth/sso/send-otp', {
-        email: ssoEmail,
-        provider: ssoProvider,
-        subdomain
-      });
-      if (res.data.success) {
-        setCountdown(60);
-        setOtpDigits(['', '', '', '', '', '']);
-        alert('Verification code resent successfully.');
-      }
-    } catch (err) {
-      setError(err.response?.data?.error?.message || 'Failed to resend code');
-    } finally {
-      setLoading(false);
-    }
+      const res = await api.post('/auth/sso/send-otp', { email: ssoEmail, provider: ssoProvider, subdomain });
+      if (res.data.success) { setCountdown(60); setOtpDigits(['','','','','','']); }
+    } catch (err) { setError(err.response?.data?.error?.message || 'Resend failed'); }
+    finally { setLoading(false); }
   };
 
-  const handleOtpDigitChange = (index, value) => {
-    if (!/^\d*$/.test(value)) return; // Only allow numbers
-    const newDigits = [...otpDigits];
-    
-    // Take the last char if pasting/typing multiple
-    newDigits[index] = value.slice(-1);
-    setOtpDigits(newDigits);
-
-    // Auto-focus next input
-    if (value && index < 5) {
-      const nextInput = document.getElementById(`otp-input-${index + 1}`);
-      if (nextInput) nextInput.focus();
-    }
+  const handleOtpDigitChange = (i, v) => {
+    if (!/^\d*$/.test(v)) return;
+    const d = [...otpDigits]; d[i] = v.slice(-1); setOtpDigits(d);
+    if (v && i < 5) document.getElementById(`otp-${i + 1}`)?.focus();
   };
-
-  const handleOtpKeyDown = (index, e) => {
-    // Auto-focus previous input on Backspace
-    if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
-      const prevInput = document.getElementById(`otp-input-${index - 1}`);
-      if (prevInput) {
-        prevInput.focus();
-        const newDigits = [...otpDigits];
-        newDigits[index - 1] = '';
-        setOtpDigits(newDigits);
-      }
+  const handleOtpKeyDown = (i, e) => {
+    if (e.key === 'Backspace' && !otpDigits[i] && i > 0) {
+      document.getElementById(`otp-${i - 1}`)?.focus();
+      const d = [...otpDigits]; d[i - 1] = ''; setOtpDigits(d);
     }
   };
 
   return (
     <AuthLayout>
-      <div className="space-y-2.5 text-left">
-        <h1 className="text-2xl font-extrabold tracking-tight text-textPrimary">
-          {step === 1 ? 'Enter workspace' : 
+      {/* Header */}
+      <div className="space-y-1.5 text-left">
+        <h2 className="text-xl font-bold tracking-tight" style={{ color: '#E8F4F8' }}>
+          {step === 1 ? 'Enter workspace' :
            step === 2 ? `Sign in to ${tenant?.name}` :
-           step === 3 ? (ssoProvider === 'google' ? 'Google Sign-In' : 'Microsoft Sign-In') :
-           'Verify Security Code'}
-        </h1>
-        <p className="text-sm text-textSecondary leading-relaxed">
-          {step === 1 ? 'Enter your organization subdomain to access your personalized HR workspace.' :
+           step === 3 ? `${ssoProvider === 'google' ? 'Google' : 'Microsoft'} Sign-In` :
+           'Verify Code'}
+        </h2>
+        <p className="text-[11px] font-normal leading-relaxed" style={{ color: 'rgba(232,244,248,0.35)' }}>
+          {step === 1 ? 'Enter your organization subdomain to access your HR workspace.' :
            step === 2 ? `Secure login for ${subdomain}.hrms.local` :
-           step === 3 ? `Enter your registered ${ssoProvider === 'google' ? 'Google/Gmail' : 'Microsoft'} email address.` :
-           `Enter the 6-digit verification code sent to ${ssoEmail}.`}
+           step === 3 ? 'Enter your registered email address.' :
+           `Enter the 6-digit code sent to ${ssoEmail}.`}
         </p>
       </div>
 
-      {/* Lockout Amber Banner (Strictly calm warning, not red error) */}
+      {/* Alerts */}
       {lockoutMsg && (
-        <div className="flex gap-2.5 p-3.5 rounded-button bg-amber-50 border border-amber-200 text-amber-800 text-[12.5px] font-medium leading-relaxed text-left animate-fade-in">
-          <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+        <div className="flex gap-2 p-3 rounded-lg text-[10.5px] font-medium text-left animate-fade-in" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C' }}>
+          <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
           <span>{lockoutMsg}</span>
         </div>
       )}
-
-      {/* Red Form Error */}
       {error && (
-        <div className="flex gap-2.5 p-3.5 rounded-button bg-red-50/80 border border-red-200/80 text-danger text-[12.5px] font-medium text-left animate-fade-in animate-shake">
-          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+        <div className="flex gap-2 p-3 rounded-lg text-[10.5px] font-medium text-left animate-fade-in" style={{ background: 'rgba(255,45,85,0.08)', border: '1px solid rgba(255,45,85,0.2)', color: '#FF2D55' }}>
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
       )}
 
+      {/* Step 1: Subdomain */}
       {step === 1 && (
-        <form onSubmit={handleLookupSubdomain} className="space-y-5 text-left animate-fade-in">
-          <div className="space-y-2">
-            <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider">Subdomain</label>
-            <div className="relative">
-              <Building className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-textSecondary/80" />
-              <input
+        <form onSubmit={handleLookupSubdomain} className="space-y-6 text-left animate-fade-in">
+          <div className="space-y-1.5">
+            <label className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(232,244,248,0.3)' }}>Workspace</label>
+            <div className="relative flex items-center">
+              <NeonInput
                 type="text"
                 placeholder="your-company"
                 value={subdomain}
                 onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/\s+/g, ''))}
                 disabled={loading}
-                className="w-full h-12 pl-11 pr-28 border border-borderColor rounded-input text-sm focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 bg-transparent transition-all duration-200"
               />
-              <span className="absolute right-3.5 top-3.5 text-xs text-textSecondary font-bold bg-slate-100/80 px-2 py-0.5 rounded-md">
-                .hrms.local
-              </span>
+              <span className="absolute right-0 text-[9px] font-extrabold tracking-wider" style={{ color: 'rgba(0,245,212,0.35)' }}>.hrms.local</span>
             </div>
           </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full h-12 bg-primary hover:bg-primary-hover text-white rounded-button text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 hover:scale-[1.01] active:scale-[0.98] shadow-sm hover:shadow-md hover:shadow-primary/10 disabled:opacity-50 disabled:pointer-events-none"
-          >
-            {loading ? 'Searching...' : 'Continue'}
-            <ArrowRight className="h-4 w-4" />
-          </button>
+          <LiquidButton type="submit" disabled={loading}>
+            {loading ? 'Searching...' : 'Continue'} <ArrowRight className="h-3.5 w-3.5" />
+          </LiquidButton>
         </form>
       )}
 
+      {/* Step 2: Credentials */}
       {step === 2 && (
         <form onSubmit={handleLogin} className="space-y-5 text-left animate-fade-in">
-          <div className="space-y-2">
-            <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider">Email Address</label>
-            <div className="relative">
-              <Mail className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-textSecondary/80" />
-              <input
-                type="email"
-                placeholder="you@company.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={loading}
-                className="w-full h-12 pl-11 border border-borderColor rounded-input text-sm focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 bg-transparent transition-all duration-200"
-              />
-            </div>
+          <div className="space-y-1.5">
+            <label className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(232,244,248,0.3)' }}>Email</label>
+            <NeonInput type="email" placeholder="you@company.com" value={email} onChange={(e) => setEmail(e.target.value)} disabled={loading} />
           </div>
-
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <div className="flex justify-between items-center">
-              <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider">Password</label>
-              <button
-                type="button"
-                onClick={() => alert('For testing, please use default password "Password123"')}
-                className="text-[11px] font-bold text-primary hover:text-primary-hover transition-colors"
-              >
-                Forgot password?
+              <label className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(232,244,248,0.3)' }}>Password</label>
+              <button type="button" onClick={() => alert('Default: Password123')} className="text-[9px] font-bold transition-colors" style={{ color: '#00F5D4' }}>
+                Forgot?
               </button>
             </div>
-            <div className="relative">
-              <Key className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-textSecondary/80" />
-              <input
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={loading}
-                className="w-full h-12 pl-11 border border-borderColor rounded-input text-sm focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 bg-transparent transition-all duration-200"
-              />
-            </div>
+            <NeonInput type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} disabled={loading} />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full h-12 bg-primary hover:bg-primary-hover text-white rounded-button text-sm font-semibold flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-[1.01] active:scale-[0.98] shadow-sm hover:shadow-md hover:shadow-primary/10 disabled:opacity-50 disabled:pointer-events-none"
-          >
+          <LiquidButton type="submit" disabled={loading}>
             {loading ? 'Signing in...' : 'Sign In'}
-          </button>
+          </LiquidButton>
 
-          <div className="relative my-6 flex items-center justify-center">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-borderColor/85"></div>
-            </div>
-            <span className="relative px-3.5 bg-white text-[10px] font-bold text-textSecondary uppercase tracking-wider">Or Single Sign-On</span>
+          {/* SSO Divider */}
+          <div className="relative flex items-center justify-center my-4">
+            <div className="w-full h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+            <span className="absolute px-3 text-[8px] font-bold uppercase tracking-[0.25em]" style={{ background: 'rgba(5,5,8,0.8)', color: 'rgba(232,244,248,0.2)' }}>Or SSO</span>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => handleSsoClick('google')}
-              className="h-11 border border-borderColor/60 hover:border-primary/30 hover:bg-slate-50 text-textPrimary text-xs font-bold rounded-button flex items-center justify-center gap-2.5 cursor-pointer transition-all duration-200 hover:scale-[1.01] active:scale-[0.98]"
-            >
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-              </svg>
-              Google
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSsoClick('microsoft')}
-              className="h-11 border border-borderColor/60 hover:border-primary/30 hover:bg-slate-50 text-textPrimary text-xs font-bold rounded-button flex items-center justify-center gap-2.5 cursor-pointer transition-all duration-200 hover:scale-[1.01] active:scale-[0.98]"
-            >
-              <svg className="h-4 w-4" viewBox="0 0 23 23" fill="currentColor">
-                <rect x="0" y="0" width="11" height="11" fill="#F25022"/>
-                <rect x="12" y="0" width="11" height="11" fill="#7FBA00"/>
-                <rect x="0" y="12" width="11" height="11" fill="#00A4EF"/>
-                <rect x="12" y="12" width="11" height="11" fill="#FFB900"/>
-              </svg>
-              Microsoft
-            </button>
+            {['google', 'microsoft'].map((p) => (
+              <button key={p} type="button" onClick={() => handleSsoClick(p)}
+                className="h-10 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 hover:scale-[1.02]"
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(232,244,248,0.5)' }}
+              >
+                {p === 'google' ? (
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                  </svg>
+                ) : (
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 23 23">
+                    <rect x="0" y="0" width="11" height="11" fill="#F25022"/>
+                    <rect x="12" y="0" width="11" height="11" fill="#7FBA00"/>
+                    <rect x="0" y="12" width="11" height="11" fill="#00A4EF"/>
+                    <rect x="12" y="12" width="11" height="11" fill="#FFB900"/>
+                  </svg>
+                )}
+                {p}
+              </button>
+            ))}
           </div>
 
-          <button
-            type="button"
-            onClick={() => setStep(1)}
-            className="w-full text-center text-xs font-bold text-textSecondary hover:text-textPrimary transition-colors mt-5 block"
-          >
-            Back to workspace selection
+          <button type="button" onClick={() => setStep(1)} className="w-full text-center text-[10px] font-bold mt-4 transition-colors" style={{ color: 'rgba(232,244,248,0.2)' }}>
+            ← Back to workspace
           </button>
         </form>
       )}
 
+      {/* Step 3: SSO Email */}
       {step === 3 && (
         <form onSubmit={handleSendOtp} className="space-y-5 text-left animate-fade-in">
-          <div className="space-y-2">
-            <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider">
-              Email Address
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-textSecondary/80" />
-              <input
-                type="email"
-                placeholder={ssoProvider === 'google' ? 'you@gmail.com' : 'you@outlook.com'}
-                value={ssoEmail}
-                onChange={(e) => setSsoEmail(e.target.value)}
-                disabled={loading}
-                required
-                className="w-full h-12 pl-11 border border-borderColor rounded-input text-sm focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 bg-transparent transition-all duration-200"
-              />
-            </div>
-            <p className="text-[11px] text-textSecondary leading-normal">
-              Enter your registered user email (e.g. <strong>employee@default.com</strong> or <strong>admin@default.com</strong>) to receive a secure login code.
+          <div className="space-y-1.5">
+            <label className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(232,244,248,0.3)' }}>Email</label>
+            <NeonInput type="email" placeholder={ssoProvider === 'google' ? 'you@gmail.com' : 'you@outlook.com'} value={ssoEmail} onChange={(e) => setSsoEmail(e.target.value)} disabled={loading} required />
+            <p className="text-[10px] leading-relaxed" style={{ color: 'rgba(232,244,248,0.2)' }}>
+              Use <strong style={{color:'rgba(0,245,212,0.5)'}}>employee@default.com</strong> or <strong style={{color:'rgba(0,245,212,0.5)'}}>admin@default.com</strong>
             </p>
           </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full h-12 bg-primary hover:bg-primary-hover text-white rounded-button text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 hover:scale-[1.01] active:scale-[0.98] shadow-sm hover:shadow-md hover:shadow-primary/10 disabled:opacity-50 disabled:pointer-events-none"
-          >
-            {loading ? 'Sending Code...' : 'Send Verification Code'}
-            <ArrowRight className="h-4 w-4" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setError('');
-              setStep(2);
-            }}
-            className="w-full text-center text-xs font-bold text-textSecondary hover:text-textPrimary mt-4 flex items-center justify-center gap-1.5 transition-colors"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to password login
+          <LiquidButton type="submit" disabled={loading}>
+            {loading ? 'Sending...' : 'Send Code'} <ArrowRight className="h-3.5 w-3.5" />
+          </LiquidButton>
+          <button type="button" onClick={() => { setError(''); setStep(2); }} className="w-full text-center text-[10px] font-bold mt-3 flex items-center justify-center gap-1 transition-colors" style={{ color: 'rgba(232,244,248,0.2)' }}>
+            <ArrowLeft className="h-3 w-3" /> Back
           </button>
         </form>
       )}
 
+      {/* Step 4: OTP */}
       {step === 4 && (
         <form onSubmit={handleVerifyOtp} className="space-y-5 text-left animate-fade-in">
           <div className="space-y-4">
-            <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider block text-center">
-              Verification Code
-            </label>
+            <label className="text-[9px] font-bold uppercase tracking-[0.2em] block text-center" style={{ color: 'rgba(232,244,248,0.3)' }}>Verification Code</label>
             <div className="flex justify-center gap-2.5">
-              {otpDigits.map((digit, idx) => (
+              {otpDigits.map((d, i) => (
                 <input
-                  key={idx}
-                  id={`otp-input-${idx}`}
-                  type="text"
-                  maxLength="1"
-                  value={digit}
-                  onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
-                  onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                  key={i} id={`otp-${i}`} type="text" maxLength="1" value={d}
+                  onChange={(e) => handleOtpDigitChange(i, e.target.value)}
+                  onKeyDown={(e) => handleOtpKeyDown(i, e)}
                   disabled={loading}
-                  className="w-12 h-14 text-center border border-borderColor rounded-input text-xl font-bold focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 bg-transparent transition-all duration-200"
+                  className="w-11 h-13 text-center text-lg font-bold rounded-lg focus:outline-none transition-all duration-300"
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: d ? '1px solid rgba(0,245,212,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                    color: '#E8F4F8',
+                    boxShadow: d ? '0 0 12px rgba(0,245,212,0.1)' : 'none',
+                  }}
                 />
               ))}
             </div>
-            <p className="text-[11px] text-textSecondary text-center leading-normal">
-              Enter the 6-digit OTP code sent to <strong>{ssoEmail}</strong>. (Check the terminal logs of the backend process to read the simulated email).
-            </p>
           </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full h-12 bg-primary hover:bg-primary-hover text-white rounded-button text-sm font-semibold flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-[1.01] active:scale-[0.98] shadow-sm hover:shadow-md hover:shadow-primary/10 disabled:opacity-50 disabled:pointer-events-none"
-          >
+          <LiquidButton type="submit" disabled={loading}>
             {loading ? 'Verifying...' : 'Verify & Sign In'}
-          </button>
-
-          <div className="flex justify-between items-center text-xs font-bold mt-5">
-            <button
-              type="button"
-              onClick={() => {
-                setError('');
-                setStep(3);
-              }}
-              className="text-textSecondary hover:text-textPrimary transition-colors flex items-center gap-1"
-            >
-              Change Email
-            </button>
-
-            <button
-              type="button"
-              onClick={handleResendOtp}
-              disabled={loading || countdown > 0}
-              className={`text-primary hover:text-primary-hover transition-colors disabled:opacity-50 ${countdown > 0 ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-            >
+          </LiquidButton>
+          <div className="flex justify-between items-center text-[10px] font-bold mt-4">
+            <button type="button" onClick={() => { setError(''); setStep(3); }} style={{ color: 'rgba(232,244,248,0.25)' }}>Change Email</button>
+            <button type="button" onClick={handleResendOtp} disabled={loading || countdown > 0}
+              className="disabled:opacity-40" style={{ color: '#00F5D4' }}>
               {countdown > 0 ? `Resend in ${countdown}s` : 'Resend Code'}
             </button>
           </div>

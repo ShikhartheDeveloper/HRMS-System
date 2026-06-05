@@ -148,13 +148,15 @@ export const getPendingApprovals = async (req, res, next) => {
       if (!employee) {
         return res.status(200).json({ success: true, data: [] });
       }
-      // If manager, check direct reports
+      // If manager, show direct reports AND employees with no manager assigned
       const directReportIds = await Employee.find({ managerId: employee._id, tenantId: req.user.tenantId }).select('_id');
-      query.employeeId = { $in: directReportIds.map(e => e._id) };
+      const orphanIds = await Employee.find({ managerId: null, tenantId: req.user.tenantId, _id: { $ne: employee._id } }).select('_id');
+      const allIds = [...directReportIds.map(e => e._id), ...orphanIds.map(e => e._id)];
+      query.employeeId = { $in: allIds };
     }
 
     const leaves = await Leave.find(query)
-      .populate('employeeId', 'firstName lastName employeeId designation department')
+      .populate('employeeId', 'firstName lastName employeeId designation department managerId')
       .sort({ createdAt: -1 })
       .lean();
 
