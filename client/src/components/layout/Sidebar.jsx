@@ -1,0 +1,133 @@
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import useAuthStore from '../../store/authStore';
+import {
+  LayoutDashboard,
+  CalendarDays,
+  FileSpreadsheet,
+  User,
+  Users,
+  GitFork,
+  BookOpen,
+  BarChart3,
+  Settings,
+  ShieldCheck,
+  LogOut,
+  FolderOpen
+} from 'lucide-react';
+
+const Sidebar = () => {
+  const { user, clearAuth } = useAuthStore();
+  const location = useLocation();
+
+  const handleLogout = () => {
+    clearAuth();
+  };
+
+  const menuGroups = [
+    {
+      label: 'CORE',
+      items: [
+        { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['EMPLOYEE', 'MANAGER', 'HR_ADMIN', 'LEADERSHIP'] }
+      ]
+    },
+    {
+      label: 'PEOPLE',
+      items: [
+        { name: 'My Profile', path: '/profile', icon: User, roles: ['EMPLOYEE', 'MANAGER', 'HR_ADMIN', 'LEADERSHIP'] },
+        { name: 'All Employees', path: '/employees', icon: Users, roles: ['HR_ADMIN', 'LEADERSHIP'] },
+        { name: 'Org Chart', path: '/org-chart', icon: GitFork, roles: ['HR_ADMIN', 'LEADERSHIP'] },
+        { name: 'Documents', path: '/documents', icon: FolderOpen, roles: ['EMPLOYEE', 'MANAGER', 'HR_ADMIN', 'LEADERSHIP'] }
+      ]
+    },
+    {
+      label: 'TIME & APPROVALS',
+      items: [
+        { name: 'My Attendance', path: '/attendance', icon: CalendarDays, roles: ['EMPLOYEE', 'MANAGER', 'HR_ADMIN', 'LEADERSHIP'] },
+        { name: 'My Leave', path: '/leave', icon: FileSpreadsheet, roles: ['EMPLOYEE', 'MANAGER', 'HR_ADMIN', 'LEADERSHIP'] },
+        { name: 'Approvals Queue', path: '/approvals', icon: ShieldCheck, roles: ['MANAGER', 'HR_ADMIN', 'LEADERSHIP'] }
+      ]
+    },
+    {
+      label: 'REPORTS & CONFIG',
+      items: [
+        { name: 'Reports', path: '/reports', icon: BarChart3, roles: ['HR_ADMIN', 'LEADERSHIP'] },
+        { name: 'Settings', path: '/settings', icon: Settings, roles: ['HR_ADMIN'] }
+      ]
+    }
+  ];
+
+  const filteredGroups = menuGroups
+    .map(group => ({
+      ...group,
+      items: group.items.filter(item => item.roles.includes(user?.role))
+    }))
+    .filter(group => group.items.length > 0);
+
+  return (
+    <aside className="w-60 bg-sidebar text-sidebarText h-screen flex flex-col justify-between select-none transition-all duration-200">
+      <div className="flex flex-col flex-1 overflow-y-auto">
+        {/* Logo and Tagline */}
+        <div className="h-16 flex flex-col justify-center px-6 border-b border-gray-800">
+          <span className="font-semibold text-lg text-white tracking-wide">HRMS SaaS</span>
+          <span className="text-[10px] text-gray-500 font-medium tracking-wider uppercase">Default Org</span>
+        </div>
+
+        {/* Navigation Groups */}
+        <nav className="flex-1 px-3 py-6 space-y-6">
+          {filteredGroups.map((group, groupIdx) => (
+            <div key={groupIdx} className="space-y-2">
+              <span className="px-3 text-[10px] font-semibold text-gray-500 tracking-wider uppercase">
+                {group.label}
+              </span>
+              <ul className="space-y-1">
+                {group.items.map((item, itemIdx) => {
+                  const isActive = location.pathname === item.path;
+                  const Icon = item.icon;
+
+                  return (
+                    <li key={itemIdx}>
+                      <Link
+                        to={item.path}
+                        className={`flex items-center gap-3 px-3 py-2 text-[13px] font-medium rounded-md transition-all duration-150 ${
+                          isActive
+                            ? 'text-white bg-white/5 border-l-[3px] border-primary pl-[9px]'
+                            : 'hover:text-white hover:bg-white/5 pl-3'
+                        }`}
+                      >
+                        <Icon className={`h-4.5 w-4.5 ${isActive ? 'text-primary' : 'text-sidebarText'}`} />
+                        <span>{item.name}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </nav>
+      </div>
+
+      {/* Footer / Logout */}
+      <div className="p-4 border-t border-gray-800 flex flex-col gap-3">
+        <div className="flex items-center gap-3 px-2">
+          <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-semibold uppercase">
+            {user?.email ? user.email.substring(0, 2) : 'HR'}
+          </div>
+          <div className="flex flex-col overflow-hidden">
+            <span className="text-[12px] font-medium text-white truncate">{user?.email}</span>
+            <span className="text-[10px] text-gray-500 font-semibold uppercase">{user?.role}</span>
+          </div>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-3 py-2 text-[13px] font-medium rounded-md text-red-400 hover:bg-red-500/10 hover:text-red-300 w-full text-left"
+        >
+          <LogOut className="h-4.5 w-4.5" />
+          <span>Sign out</span>
+        </button>
+      </div>
+    </aside>
+  );
+};
+
+export default Sidebar;
