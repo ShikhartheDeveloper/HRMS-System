@@ -2,6 +2,7 @@ import Leave from './leave.model.js';
 import Employee from '../employees/employee.model.js';
 import Notification from '../../models/Notification.model.js';
 import { writeAuditLog } from '../../utils/auditLogger.js';
+import { sendEmail } from '../../utils/sendEmail.js';
 
 // Base Leave quotas
 const LEAVE_QUOTAS = {
@@ -131,7 +132,7 @@ export const applyLeave = async (userId, leaveDetails, tenantId) => {
 
   // Notify Manager
   if (employee.managerId) {
-    const manager = await Employee.findById(employee.managerId).select('userId');
+    const manager = await Employee.findById(employee.managerId).select('userId email');
     if (manager) {
       await Notification.create({
         tenantId,
@@ -140,6 +141,14 @@ export const applyLeave = async (userId, leaveDetails, tenantId) => {
         content: `${employee.firstName} ${employee.lastName} has applied for ${totalDays} day(s) of ${leaveType} leave.`,
         type: 'APPROVAL'
       });
+
+      if (manager.email) {
+        await sendEmail({
+          to: manager.email,
+          subject: `Leave Request: ${employee.firstName} ${employee.lastName}`,
+          text: `Hello,\n\n${employee.firstName} ${employee.lastName} has requested ${totalDays} day(s) of ${leaveType} leave starting from ${startDate} to ${endDate}.\n\nReason: ${reason}\n\nPlease review and action this request in the approvals queue.\n\nBest regards,\nHRMS Portal`
+        }).catch(err => console.error('Failed to send leave request email to manager:', err));
+      }
     }
   }
 
@@ -188,6 +197,14 @@ export const reviewLeave = async (leaveId, reviewDetails, tenantId, reviewerId) 
     });
   }
 
+  if (leave.employeeId?.email) {
+    await sendEmail({
+      to: leave.employeeId.email,
+      subject: `Leave Request: ${status}`,
+      text: `Hello ${leave.employeeId.firstName},\n\nYour request for ${leave.totalDays} day(s) of ${leave.leaveType} leave starting on ${new Date(leave.startDate).toLocaleDateString()} has been ${status}.\n\nComments/Remarks: ${comments || 'None'}\n\nBest regards,\nHR Team`
+    }).catch(err => console.error('Failed to send leave review email to employee:', err));
+  }
+
   // Audit Log
   await writeAuditLog({
     action: `LEAVE_${status.toUpperCase()}`,
@@ -225,7 +242,7 @@ export const cancelLeave = async (leaveId, tenantId, requesterId) => {
 
   // Notify Manager if it was already approved
   if (employee.managerId) {
-    const manager = await Employee.findById(employee.managerId).select('userId');
+    const manager = await Employee.findById(employee.managerId).select('userId email');
     if (manager) {
       await Notification.create({
         tenantId,
@@ -234,6 +251,14 @@ export const cancelLeave = async (leaveId, tenantId, requesterId) => {
         content: `${employee.firstName} ${employee.lastName} has cancelled their leave request of ${leave.totalDays} day(s).`,
         type: 'INFO'
       });
+
+      if (manager.email) {
+        await sendEmail({
+          to: manager.email,
+          subject: `Leave Cancelled: ${employee.firstName} ${employee.lastName}`,
+          text: `Hello,\n\n${employee.firstName} ${employee.lastName} has cancelled their leave request of ${leave.totalDays} day(s).\n\nBest regards,\nHRMS Portal`
+        }).catch(err => console.error('Failed to send leave cancellation email to manager:', err));
+      }
     }
   }
 

@@ -11,9 +11,13 @@ const getTransporter = async () => {
     transporter = nodemailer.createTransport({
       host: env.email.smtp.host,
       port: env.email.smtp.port,
+      secure: env.email.smtp.port === 465,
       auth: {
         user: env.email.smtp.auth.user,
         pass: env.email.smtp.auth.pass
+      },
+      tls: {
+        rejectUnauthorized: false
       }
     });
   } else {

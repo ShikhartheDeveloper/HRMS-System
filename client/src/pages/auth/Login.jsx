@@ -233,16 +233,16 @@ const Login = () => {
 
   return (
     <AuthLayout>
-      <div className="space-y-2 text-left">
-        <h1 className="text-xl font-bold tracking-tight text-textPrimary">
-          {step === 1 ? 'Enter your workspace' : 
+      <div className="space-y-2.5 text-left">
+        <h1 className="text-2xl font-extrabold tracking-tight text-textPrimary">
+          {step === 1 ? 'Enter workspace' : 
            step === 2 ? `Sign in to ${tenant?.name}` :
-           step === 3 ? (ssoProvider === 'google' ? 'Sign in with Google' : 'Sign in with Microsoft') :
-           'Verify SSO Code'}
+           step === 3 ? (ssoProvider === 'google' ? 'Google Sign-In' : 'Microsoft Sign-In') :
+           'Verify Security Code'}
         </h1>
-        <p className="text-sm text-textSecondary">
-          {step === 1 ? 'Enter your company subdomain to access your organization page.' :
-           step === 2 ? `Use your credentials for ${subdomain}.hrms.local` :
+        <p className="text-sm text-textSecondary leading-relaxed">
+          {step === 1 ? 'Enter your organization subdomain to access your personalized HR workspace.' :
+           step === 2 ? `Secure login for ${subdomain}.hrms.local` :
            step === 3 ? `Enter your registered ${ssoProvider === 'google' ? 'Google/Gmail' : 'Microsoft'} email address.` :
            `Enter the 6-digit verification code sent to ${ssoEmail}.`}
         </p>
@@ -250,35 +250,35 @@ const Login = () => {
 
       {/* Lockout Amber Banner (Strictly calm warning, not red error) */}
       {lockoutMsg && (
-        <div className="flex gap-2.5 p-3 rounded-button bg-amber-50 border border-amber-200 text-amber-800 text-[12px] font-medium leading-relaxed text-left">
-          <ShieldAlert className="h-4.5 w-4.5 text-amber-600 shrink-0 mt-0.5" />
+        <div className="flex gap-2.5 p-3.5 rounded-button bg-amber-50 border border-amber-200 text-amber-800 text-[12.5px] font-medium leading-relaxed text-left animate-fade-in">
+          <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
           <span>{lockoutMsg}</span>
         </div>
       )}
 
       {/* Red Form Error */}
       {error && (
-        <div className="flex gap-2 p-3 rounded-button bg-red-50 border border-red-200 text-danger text-[12px] font-medium text-left">
-          <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+        <div className="flex gap-2.5 p-3.5 rounded-button bg-red-50/80 border border-red-200/80 text-danger text-[12.5px] font-medium text-left animate-fade-in animate-shake">
+          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
       )}
 
       {step === 1 && (
-        <form onSubmit={handleLookupSubdomain} className="space-y-4 text-left">
-          <div className="space-y-1">
-            <label className="text-[11px] font-semibold text-textSecondary uppercase tracking-wider">Subdomain</label>
+        <form onSubmit={handleLookupSubdomain} className="space-y-5 text-left animate-fade-in">
+          <div className="space-y-2">
+            <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider">Subdomain</label>
             <div className="relative">
-              <Building className="absolute left-3.5 top-3.5 h-4 w-4 text-textSecondary" />
+              <Building className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-textSecondary/80" />
               <input
                 type="text"
                 placeholder="your-company"
                 value={subdomain}
                 onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/\s+/g, ''))}
                 disabled={loading}
-                className="w-full h-11 pl-10 pr-24 border border-borderColor rounded-input text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-transparent transition-all"
+                className="w-full h-12 pl-11 pr-28 border border-borderColor rounded-input text-sm focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 bg-transparent transition-all duration-200"
               />
-              <span className="absolute right-3.5 top-3.5 text-xs text-textSecondary font-medium">
+              <span className="absolute right-3.5 top-3.5 text-xs text-textSecondary font-bold bg-slate-100/80 px-2 py-0.5 rounded-md">
                 .hrms.local
               </span>
             </div>
@@ -287,7 +287,7 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-12 bg-primary hover:bg-primary-hover text-white rounded-button text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm disabled:opacity-50"
+            className="w-full h-12 bg-primary hover:bg-primary-hover text-white rounded-button text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 hover:scale-[1.01] active:scale-[0.98] shadow-sm hover:shadow-md hover:shadow-primary/10 disabled:opacity-50 disabled:pointer-events-none"
           >
             {loading ? 'Searching...' : 'Continue'}
             <ArrowRight className="h-4 w-4" />
@@ -296,42 +296,42 @@ const Login = () => {
       )}
 
       {step === 2 && (
-        <form onSubmit={handleLogin} className="space-y-4 text-left">
-          <div className="space-y-1">
-            <label className="text-[11px] font-semibold text-textSecondary uppercase tracking-wider">Email Address</label>
+        <form onSubmit={handleLogin} className="space-y-5 text-left animate-fade-in">
+          <div className="space-y-2">
+            <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider">Email Address</label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-textSecondary" />
+              <Mail className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-textSecondary/80" />
               <input
                 type="email"
                 placeholder="you@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
-                className="w-full h-11 pl-10 border border-borderColor rounded-input text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-transparent transition-all"
+                className="w-full h-12 pl-11 border border-borderColor rounded-input text-sm focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 bg-transparent transition-all duration-200"
               />
             </div>
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <label className="text-[11px] font-semibold text-textSecondary uppercase tracking-wider">Password</label>
+              <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider">Password</label>
               <button
                 type="button"
                 onClick={() => alert('For testing, please use default password "Password123"')}
-                className="text-[11px] font-semibold text-primary hover:text-primary-hover"
+                className="text-[11px] font-bold text-primary hover:text-primary-hover transition-colors"
               >
                 Forgot password?
               </button>
             </div>
             <div className="relative">
-              <Key className="absolute left-3.5 top-3.5 h-4 w-4 text-textSecondary" />
+              <Key className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-textSecondary/80" />
               <input
                 type="password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
-                className="w-full h-11 pl-10 border border-borderColor rounded-input text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-transparent transition-all"
+                className="w-full h-12 pl-11 border border-borderColor rounded-input text-sm focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 bg-transparent transition-all duration-200"
               />
             </div>
           </div>
@@ -339,31 +339,43 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-12 bg-primary hover:bg-primary-hover text-white rounded-button text-sm font-semibold flex items-center justify-center cursor-pointer transition-colors shadow-sm disabled:opacity-50"
+            className="w-full h-12 bg-primary hover:bg-primary-hover text-white rounded-button text-sm font-semibold flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-[1.01] active:scale-[0.98] shadow-sm hover:shadow-md hover:shadow-primary/10 disabled:opacity-50 disabled:pointer-events-none"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
 
           <div className="relative my-6 flex items-center justify-center">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-borderColor"></div>
+              <div className="w-full border-t border-borderColor/85"></div>
             </div>
-            <span className="relative px-3 bg-surface text-[10px] font-semibold text-textSecondary uppercase tracking-wider">Or SSO login</span>
+            <span className="relative px-3.5 bg-white text-[10px] font-bold text-textSecondary uppercase tracking-wider">Or Single Sign-On</span>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => handleSsoClick('google')}
-              className="h-10 border border-borderColor hover:bg-background text-textPrimary text-xs font-semibold rounded-button flex items-center justify-center gap-2 cursor-pointer transition-colors"
+              className="h-11 border border-borderColor/60 hover:border-primary/30 hover:bg-slate-50 text-textPrimary text-xs font-bold rounded-button flex items-center justify-center gap-2.5 cursor-pointer transition-all duration-200 hover:scale-[1.01] active:scale-[0.98]"
             >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+              </svg>
               Google
             </button>
             <button
               type="button"
               onClick={() => handleSsoClick('microsoft')}
-              className="h-10 border border-borderColor hover:bg-background text-textPrimary text-xs font-semibold rounded-button flex items-center justify-center gap-2 cursor-pointer transition-colors"
+              className="h-11 border border-borderColor/60 hover:border-primary/30 hover:bg-slate-50 text-textPrimary text-xs font-bold rounded-button flex items-center justify-center gap-2.5 cursor-pointer transition-all duration-200 hover:scale-[1.01] active:scale-[0.98]"
             >
+              <svg className="h-4 w-4" viewBox="0 0 23 23" fill="currentColor">
+                <rect x="0" y="0" width="11" height="11" fill="#F25022"/>
+                <rect x="12" y="0" width="11" height="11" fill="#7FBA00"/>
+                <rect x="0" y="12" width="11" height="11" fill="#00A4EF"/>
+                <rect x="12" y="12" width="11" height="11" fill="#FFB900"/>
+              </svg>
               Microsoft
             </button>
           </div>
@@ -371,7 +383,7 @@ const Login = () => {
           <button
             type="button"
             onClick={() => setStep(1)}
-            className="w-full text-center text-[12px] font-semibold text-textSecondary hover:text-textPrimary mt-4 block"
+            className="w-full text-center text-xs font-bold text-textSecondary hover:text-textPrimary transition-colors mt-5 block"
           >
             Back to workspace selection
           </button>
@@ -379,13 +391,13 @@ const Login = () => {
       )}
 
       {step === 3 && (
-        <form onSubmit={handleSendOtp} className="space-y-4 text-left animate-fade-in">
-          <div className="space-y-1">
-            <label className="text-[11px] font-semibold text-textSecondary uppercase tracking-wider">
+        <form onSubmit={handleSendOtp} className="space-y-5 text-left animate-fade-in">
+          <div className="space-y-2">
+            <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider">
               Email Address
             </label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-textSecondary" />
+              <Mail className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-textSecondary/80" />
               <input
                 type="email"
                 placeholder={ssoProvider === 'google' ? 'you@gmail.com' : 'you@outlook.com'}
@@ -393,18 +405,18 @@ const Login = () => {
                 onChange={(e) => setSsoEmail(e.target.value)}
                 disabled={loading}
                 required
-                className="w-full h-11 pl-10 border border-borderColor rounded-input text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-transparent transition-all"
+                className="w-full h-12 pl-11 border border-borderColor rounded-input text-sm focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 bg-transparent transition-all duration-200"
               />
             </div>
-            <p className="text-[10px] text-textSecondary">
-              Enter your registered user email (e.g. <strong>employee@default.com</strong> or <strong>admin@default.com</strong>) to receive a 6-digit code.
+            <p className="text-[11px] text-textSecondary leading-normal">
+              Enter your registered user email (e.g. <strong>employee@default.com</strong> or <strong>admin@default.com</strong>) to receive a secure login code.
             </p>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-12 bg-primary hover:bg-primary-hover text-white rounded-button text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm disabled:opacity-50"
+            className="w-full h-12 bg-primary hover:bg-primary-hover text-white rounded-button text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 hover:scale-[1.01] active:scale-[0.98] shadow-sm hover:shadow-md hover:shadow-primary/10 disabled:opacity-50 disabled:pointer-events-none"
           >
             {loading ? 'Sending Code...' : 'Send Verification Code'}
             <ArrowRight className="h-4 w-4" />
@@ -416,21 +428,21 @@ const Login = () => {
               setError('');
               setStep(2);
             }}
-            className="w-full text-center text-[12px] font-semibold text-textSecondary hover:text-textPrimary mt-4 flex items-center justify-center gap-1.5"
+            className="w-full text-center text-xs font-bold text-textSecondary hover:text-textPrimary mt-4 flex items-center justify-center gap-1.5 transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Back to email & password login
+            Back to password login
           </button>
         </form>
       )}
 
       {step === 4 && (
-        <form onSubmit={handleVerifyOtp} className="space-y-4 text-left animate-fade-in">
-          <div className="space-y-3">
-            <label className="text-[11px] font-semibold text-textSecondary uppercase tracking-wider block text-center">
+        <form onSubmit={handleVerifyOtp} className="space-y-5 text-left animate-fade-in">
+          <div className="space-y-4">
+            <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider block text-center">
               Verification Code
             </label>
-            <div className="flex justify-center gap-2">
+            <div className="flex justify-center gap-2.5">
               {otpDigits.map((digit, idx) => (
                 <input
                   key={idx}
@@ -441,31 +453,31 @@ const Login = () => {
                   onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
                   onKeyDown={(e) => handleOtpKeyDown(idx, e)}
                   disabled={loading}
-                  className="w-11 h-12 text-center border border-borderColor rounded-input text-lg font-bold focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-transparent transition-all"
+                  className="w-12 h-14 text-center border border-borderColor rounded-input text-xl font-bold focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 bg-transparent transition-all duration-200"
                 />
               ))}
             </div>
-            <p className="text-[10px] text-textSecondary text-center">
-              Enter the 6-digit OTP code sent to <strong>{ssoEmail}</strong>. (Check the terminal/console logs of the backend process to read the simulated email).
+            <p className="text-[11px] text-textSecondary text-center leading-normal">
+              Enter the 6-digit OTP code sent to <strong>{ssoEmail}</strong>. (Check the terminal logs of the backend process to read the simulated email).
             </p>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-12 bg-primary hover:bg-primary-hover text-white rounded-button text-sm font-semibold flex items-center justify-center cursor-pointer transition-colors shadow-sm disabled:opacity-50"
+            className="w-full h-12 bg-primary hover:bg-primary-hover text-white rounded-button text-sm font-semibold flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-[1.01] active:scale-[0.98] shadow-sm hover:shadow-md hover:shadow-primary/10 disabled:opacity-50 disabled:pointer-events-none"
           >
             {loading ? 'Verifying...' : 'Verify & Sign In'}
           </button>
 
-          <div className="flex justify-between items-center text-[12px] font-semibold mt-4">
+          <div className="flex justify-between items-center text-xs font-bold mt-5">
             <button
               type="button"
               onClick={() => {
                 setError('');
                 setStep(3);
               }}
-              className="text-textSecondary hover:text-textPrimary flex items-center gap-1"
+              className="text-textSecondary hover:text-textPrimary transition-colors flex items-center gap-1"
             >
               Change Email
             </button>
@@ -474,7 +486,7 @@ const Login = () => {
               type="button"
               onClick={handleResendOtp}
               disabled={loading || countdown > 0}
-              className={`text-primary hover:text-primary-hover disabled:opacity-50 ${countdown > 0 ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+              className={`text-primary hover:text-primary-hover transition-colors disabled:opacity-50 ${countdown > 0 ? 'cursor-not-allowed' : 'cursor-pointer'}`}
             >
               {countdown > 0 ? `Resend in ${countdown}s` : 'Resend Code'}
             </button>

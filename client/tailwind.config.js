@@ -7,32 +7,39 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#F8F7F4',
+        background: '#F8FAFC',
         surface: '#FFFFFF',
-        sidebar: '#1A1A2E',
-        sidebarText: '#A8A8C0',
+        sidebar: '#090D1F',
+        sidebarText: '#8F9CAE',
         primary: {
-          DEFAULT: '#6C63FF',
-          hover: '#5A52D5'
+          DEFAULT: '#4F46E5',
+          hover: '#4338CA'
         },
-        success: '#22C55E',
+        accent: {
+          DEFAULT: '#0D9488',
+          hover: '#0F766E'
+        },
+        success: '#10B981',
         warning: '#F59E0B',
         danger: '#EF4444',
-        textPrimary: '#1A1A2E',
-        textSecondary: '#6B7280',
-        borderColor: '#E5E4E0'
+        textPrimary: '#0F172A',
+        textSecondary: '#475569',
+        borderColor: '#E2E8F0'
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif']
+        sans: ['Inter', 'system-ui', 'sans-serif']
       },
       borderRadius: {
-        card: '12px',
-        input: '8px',
-        button: '8px',
+        card: '14px',
+        input: '10px',
+        button: '10px',
         badge: '20px'
       },
       boxShadow: {
-        custom: '0 1px 3px rgba(0,0,0,0.06)'
+        custom: '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06)',
+        card: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05)',
+        glow: '0 0 15px rgba(79, 70, 229, 0.15)',
+        'glow-accent': '0 0 15px rgba(13, 148, 136, 0.15)'
       }
     },
   },

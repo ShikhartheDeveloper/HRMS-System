@@ -4,6 +4,7 @@ import User from '../../models/User.model.js';
 import { generateEmployeeId } from '../../utils/generateEmployeeId.js';
 import { writeAuditLog } from '../../utils/auditLogger.js';
 import { paginate } from '../../utils/paginate.js';
+import { sendEmail } from '../../utils/sendEmail.js';
 
 export const createEmployee = async (employeeData, tenantId, creatorId) => {
   const session = await mongoose.startSession();
@@ -49,6 +50,36 @@ export const createEmployee = async (employeeData, tenantId, creatorId) => {
       targetId: newEmployee[0].employeeId,
       meta: { email, employeeId }
     });
+
+    // Send welcome onboarding email
+    sendEmail({
+      to: email,
+      subject: 'Welcome to HRMS Elite!',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #e2e8f0; border-radius: 14px; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+          <div style="text-align: center; border-bottom: 2px solid #4f46e5; padding-bottom: 20px;">
+            <h2 style="color: #4f46e5; margin: 0; font-size: 24px;">HRMS Elite</h2>
+            <p style="color: #64748b; margin: 5px 0 0 0; font-size: 14px;">Your Enterprise HR Portal</p>
+          </div>
+          <div style="padding: 25px 0;">
+            <h3 style="color: #0f172a; font-size: 18px; margin-top: 0;">Welcome to the Team, ${profileDetails.firstName}!</h3>
+            <p style="color: #475569; font-size: 14px; line-height: 1.6; margin: 0 0 20px 0;">We are thrilled to welcome you. An account has been set up for you in the company directory. You can log in using the details below:</p>
+            
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 20px;">
+              <p style="margin: 0 0 8px 0; font-size: 14px; color: #475569;"><strong>Portal URL:</strong> <a href="http://localhost:5173" style="color: #4f46e5; font-weight: bold; text-decoration: none;">http://localhost:5173</a></p>
+              <p style="margin: 0 0 8px 0; font-size: 14px; color: #475569;"><strong>Subdomain:</strong> Use your workspace subdomain</p>
+              <p style="margin: 0 0 8px 0; font-size: 14px; color: #475569;"><strong>Email Address:</strong> ${email}</p>
+              <p style="margin: 0; font-size: 14px; color: #475569;"><strong>Password:</strong> ${password}</p>
+            </div>
+            
+            <p style="color: #64748b; font-size: 12px; line-height: 1.5; margin: 0;">For security purposes, we highly recommend changing your password after logging in for the first time by visiting your profile settings.</p>
+          </div>
+          <div style="border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
+            This is an automated system email from HRMS Elite. Please do not reply directly.
+          </div>
+        </div>
+      `
+    }).catch(err => console.error('Onboarding email sending failed:', err));
 
     return newEmployee[0];
   } catch (error) {
