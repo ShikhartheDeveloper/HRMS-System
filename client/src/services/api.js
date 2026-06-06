@@ -44,7 +44,10 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     // Check if error is 401 and not already retried
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Skip refresh for auth endpoints to prevent loops
+    const skipRefreshUrls = ['/auth/refresh', '/auth/login', '/auth/register'];
+    const isAuthEndpoint = skipRefreshUrls.some(url => originalRequest.url?.includes(url));
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });

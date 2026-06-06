@@ -162,7 +162,7 @@ const Login = () => {
       setLoading(true);
       api.post('/auth/refresh').then((res) => {
         if (res.data.success) { setAuth(res.data.data.user, ssoToken); navigate('/dashboard'); }
-      }).catch(() => setError('SSO login validation failed')).finally(() => setLoading(false));
+      }).catch(() => { /* Silently ignore – no active session cookie yet */ }).finally(() => setLoading(false));
     }
     if (ssoError) setError(ssoError === 'subdomain_missing' ? 'Subdomain missing' : ssoError === 'tenant_not_found' ? 'Tenant not found' : 'SSO failed');
   }, [searchParams, setAuth, navigate]);
