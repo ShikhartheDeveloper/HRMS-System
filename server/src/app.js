@@ -53,8 +53,8 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/uploads', uploadRoutes);
 
-// 404 Route handler
-app.use((req, res) => {
+// 404 Route handler for API routes
+app.use('/api', (req, res) => {
   res.status(404).json({
     success: false,
     error: {
@@ -63,6 +63,25 @@ app.use((req, res) => {
     }
   });
 });
+
+// Serve Frontend in Production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(process.cwd(), '../client/dist')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(process.cwd(), '../client/dist', 'index.html'));
+  });
+} else {
+  // 404 Route handler for non-API in dev
+  app.use((req, res) => {
+    res.status(404).json({
+      success: false,
+      error: {
+        code: 'NOT_FOUND',
+        message: `Endpoint ${req.method} ${req.originalUrl} not found`
+      }
+    });
+  });
+}
 
 // Global Error Handler
 app.use(errorHandler);

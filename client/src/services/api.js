@@ -1,8 +1,10 @@
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
 
+const API_BASE = import.meta.env.PROD ? '/api' : 'http://localhost:5000/api';
+
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: API_BASE,
   withCredentials: true, // Crucial for httpOnly refresh cookies
   headers: {
     'Content-Type': 'application/json'
@@ -60,7 +62,7 @@ api.interceptors.response.use(
       try {
         // Attempt silent refresh via cookie
         const refreshResponse = await axios.post(
-          'http://localhost:5000/api/auth/refresh',
+          `${API_BASE}/auth/refresh`,
           {},
           { withCredentials: true }
         );
