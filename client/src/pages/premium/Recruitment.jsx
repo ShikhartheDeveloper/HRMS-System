@@ -31,6 +31,7 @@ const Recruitment = () => {
   const [candLast, setCandLast] = useState('');
   const [candEmail, setCandEmail] = useState('');
   const [candJob, setCandJob] = useState('');
+  const [viewingJob, setViewingJob] = useState(null);
 
   const resolveJobImageUrl = (url) => {
     if (!url) return null;
@@ -355,6 +356,14 @@ const Recruitment = () => {
                         {job.postedByEmployeeId ? ` by ${job.postedByEmployeeId.firstName} ${job.postedByEmployeeId.lastName}` : ''}
                       </p>
                     )}
+                    <div className="pt-2">
+                      <button
+                        onClick={() => setViewingJob(job)}
+                        className="w-full py-1 bg-background hover:bg-primary border border-borderColor hover:border-primary hover:text-white text-[11px] font-semibold rounded-button flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer"
+                      >
+                        View Details
+                      </button>
+                    </div>
                   </div>
                 </div>
                 );
@@ -556,6 +565,63 @@ const Recruitment = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* View Job Modal */}
+        {viewingJob && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in p-4">
+            <div className="bg-surface border border-borderColor rounded-card p-6 w-full max-w-md shadow-lg space-y-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-start">
+                <div>
+                  <span className="px-2 py-0.5 text-[9px] font-bold uppercase rounded-full bg-success/15 text-success">{viewingJob.status}</span>
+                  <h3 className="text-base font-bold text-textPrimary mt-1.5">{viewingJob.title}</h3>
+                  <p className="text-[11px] text-textSecondary uppercase tracking-wider font-semibold mt-0.5">
+                    {viewingJob.department} · {viewingJob.location} · {viewingJob.employmentType || 'Full-time'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setViewingJob(null)}
+                  className="p-1 hover:bg-background rounded-full transition-colors text-textSecondary hover:text-textPrimary"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              
+              {resolveJobImageUrl(viewingJob.imageUrl) && (
+                <div className="h-40 w-full bg-background overflow-hidden rounded-input border border-borderColor">
+                  <img
+                    src={resolveJobImageUrl(viewingJob.imageUrl)}
+                    alt={viewingJob.title}
+                    className="h-full w-full object-cover"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  />
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-textSecondary">Job Description</h4>
+                <p className="text-[12px] text-textSecondary leading-relaxed whitespace-pre-line bg-background/50 border border-borderColor/30 rounded-xl p-4">
+                  {viewingJob.description || 'No description provided.'}
+                </p>
+              </div>
+
+              <div className="flex justify-between items-center text-[10px] text-textSecondary pt-2 border-t border-borderColor/30">
+                <span>Posted: {new Date(viewingJob.createdAt).toLocaleDateString()}</span>
+                {viewingJob.postedByEmployeeId && (
+                  <span>By: {viewingJob.postedByEmployeeId.firstName} {viewingJob.postedByEmployeeId.lastName}</span>
+                )}
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={() => setViewingJob(null)}
+                  className="px-4 py-1.5 bg-primary text-white rounded-button font-semibold hover:bg-primary-hover text-[12px]"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         )}
