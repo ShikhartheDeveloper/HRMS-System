@@ -6,9 +6,8 @@ let transporterVerified = false;
 
 /**
  * Initialize and verify the mail transporter.
- * Uses connection pooling for faster throughput and verifies
- * the connection on first use. If verification fails, the cached
- * transporter is discarded so the next call can retry with fresh creds.
+ * Verifies the connection on first use. If verification fails,
+ * the cached transporter is discarded so the next call can retry.
  */
 const getTransporter = async () => {
   if (transporter && transporterVerified) return transporter;
@@ -29,13 +28,9 @@ const getTransporter = async () => {
       tls: {
         rejectUnauthorized: false
       },
-      // ── Performance: connection pooling ──
-      pool: true,
-      maxConnections: 5,
-      maxMessages: 100,
       // ── Timeouts so a bad server doesn't hang forever ──
-      connectionTimeout: 10_000,  // 10 s to establish TCP
-      greetingTimeout: 10_000,    // 10 s for SMTP greeting
+      connectionTimeout: 15_000,  // 15 s to establish TCP
+      greetingTimeout: 15_000,    // 15 s for SMTP greeting
       socketTimeout: 30_000       // 30 s idle on the socket
     });
 
@@ -50,7 +45,7 @@ const getTransporter = async () => {
       console.error('   → Check SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS in .env');
       console.error('   → For Gmail: enable 2-Step Verification and create a fresh App Password at https://myaccount.google.com/apppasswords');
       // Don't cache a broken transporter — fall through to console fallback
-      t.close?.();
+      try { t.close?.(); } catch (_) {}
     }
   }
 
@@ -99,7 +94,7 @@ export const sendEmail = async ({ to, subject, text, html }) => {
   } catch (error) {
     console.error(`Email sending failed (to: ${to}):`, error.message);
 
-    // If the pooled connection died, force re-init on the next attempt
+    // Force re-init on the next attempt
     transporterVerified = false;
     transporter = null;
 
@@ -111,7 +106,7 @@ export const sendEmail = async ({ to, subject, text, html }) => {
  * Force-reset the transporter (useful after env changes or for tests).
  */
 export const resetTransporter = () => {
-  if (transporter?.close) transporter.close();
+  try { transporter?.close?.(); } catch (_) {}
   transporter = null;
   transporterVerified = false;
 };
