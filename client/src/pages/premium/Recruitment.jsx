@@ -354,7 +354,8 @@ const Recruitment = () => {
                     )}
                   </div>
                 </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
