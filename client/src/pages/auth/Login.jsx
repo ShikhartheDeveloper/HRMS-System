@@ -586,7 +586,7 @@ const Login = () => {
             {['google', 'microsoft'].map((p) => (
               <button key={p} type="button" onClick={() => handleSsoClick(p)}
                 className="h-10 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 hover:scale-[1.02]"
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(232,244,248,0.5)' }}
+                style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.015) 0%, rgba(123,47,190,0.02) 100%)', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(232,244,248,0.9)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)' }}
               >
                 {p === 'google' ? (
                   <svg className="h-3.5 w-3.5" viewBox="0 0 24 24">
@@ -647,10 +647,11 @@ const Login = () => {
                   disabled={loading}
                   className="w-11 h-13 text-center text-lg font-bold rounded-lg focus:outline-none transition-all duration-300"
                   style={{
-                    background: 'rgba(255,255,255,0.03)',
-                    border: d ? '1px solid rgba(0,245,212,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.01) 0%, rgba(123,47,190,0.02) 100%)',
+                    border: d ? '1px solid rgba(0,245,212,0.45)' : '1px solid rgba(255,255,255,0.08)',
                     color: '#E8F4F8',
-                    boxShadow: d ? '0 0 12px rgba(0,245,212,0.1)' : 'none',
+                    boxShadow: d ? '0 6px 18px rgba(0,245,212,0.08)' : '0 2px 6px rgba(0,0,0,0.2) inset',
+                    backdropFilter: 'blur(4px)'
                   }}
                 />
               ))}
@@ -733,10 +734,11 @@ const Login = () => {
                   disabled={loading}
                   className="w-11 h-13 text-center text-lg font-bold rounded-lg focus:outline-none transition-all duration-300"
                   style={{
-                    background: 'rgba(255,255,255,0.03)',
-                    border: d ? '1px solid rgba(0,245,212,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.01) 0%, rgba(123,47,190,0.02) 100%)',
+                    border: d ? '1px solid rgba(0,245,212,0.45)' : '1px solid rgba(255,255,255,0.08)',
                     color: '#E8F4F8',
-                    boxShadow: d ? '0 0 12px rgba(0,245,212,0.1)' : 'none',
+                    boxShadow: d ? '0 6px 18px rgba(0,245,212,0.08)' : '0 2px 6px rgba(0,0,0,0.2) inset',
+                    backdropFilter: 'blur(4px)'
                   }}
                 />
               ))}
@@ -794,10 +796,11 @@ const Login = () => {
                   disabled={loading}
                   className="w-11 h-13 text-center text-lg font-bold rounded-lg focus:outline-none transition-all duration-300"
                   style={{
-                    background: 'rgba(255,255,255,0.03)',
-                    border: d ? '1px solid rgba(0,245,212,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.01) 0%, rgba(123,47,190,0.02) 100%)',
+                    border: d ? '1px solid rgba(0,245,212,0.45)' : '1px solid rgba(255,255,255,0.08)',
                     color: '#E8F4F8',
-                    boxShadow: d ? '0 0 12px rgba(0,245,212,0.1)' : 'none',
+                    boxShadow: d ? '0 6px 18px rgba(0,245,212,0.08)' : '0 2px 6px rgba(0,0,0,0.2) inset',
+                    backdropFilter: 'blur(4px)'
                   }}
                 />
               ))}
