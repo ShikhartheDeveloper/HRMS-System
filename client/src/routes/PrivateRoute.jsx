@@ -4,7 +4,7 @@ import useAuthStore from '../store/authStore';
 import api from '../services/api';
 
 const PrivateRoute = ({ children }) => {
-  const { isAuthenticated, isInitialized, setAuth, clearAuth, setInitialized } = useAuthStore();
+  const { isAuthenticated, isInitialized, setAuth, clearAuth, setInitialized, profileImageUrl, setProfileImageUrl } = useAuthStore();
   const location = useLocation();
 
   useEffect(() => {
@@ -15,16 +15,37 @@ const PrivateRoute = ({ children }) => {
           if (res.data.success) {
             const { user, token } = res.data.data;
             setAuth(user, token);
+            // Fetch profile image if employee ID exists
+            if (user?.employee?._id) {
+              try {
+                const imgRes = await api.get(`/uploads/profile-image/${user.employee._id}`);
+                if (imgRes.data.success && imgRes.data.data.signedUrl) {
+                  setProfileImageUrl(imgRes.data.data.signedUrl);
+                }
+              } catch (e) {
+                // Ignore failure to load profile image
+              }
+            }
           } else {
             clearAuth();
           }
         } catch (err) {
           clearAuth();
         }
+      } else if (isAuthenticated && !profileImageUrl && useAuthStore.getState().user?.employee?._id) {
+        // Fetch image if authenticated but image not loaded
+        try {
+          const empId = useAuthStore.getState().user.employee._id;
+          api.get(`/uploads/profile-image/${empId}`).then((imgRes) => {
+            if (imgRes.data.success && imgRes.data.data.signedUrl) {
+              setProfileImageUrl(imgRes.data.data.signedUrl);
+            }
+          }).catch(() => {});
+        } catch (e) {}
       }
     };
     checkSession();
-  }, [isAuthenticated, isInitialized, setAuth, clearAuth]);
+  }, [isAuthenticated, isInitialized, setAuth, clearAuth, profileImageUrl, setProfileImageUrl]);
 
   if (!isInitialized) {
     return (

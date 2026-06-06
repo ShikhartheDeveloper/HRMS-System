@@ -14,6 +14,7 @@ router.get('/headcount', authorize('HR_ADMIN', 'LEADERSHIP'), reportController.g
 router.get('/attendance-summary', authorize('HR_ADMIN', 'LEADERSHIP'), reportController.getAttendance);
 router.get('/leave-usage', authorize('HR_ADMIN', 'LEADERSHIP'), reportController.getLeaves);
 router.get('/attrition', authorize('HR_ADMIN', 'LEADERSHIP'), reportController.getAttrition);
+router.get('/salary-flow', authorize('HR_ADMIN', 'LEADERSHIP'), reportController.getSalaryFlows);
 
 // Async CSV Exports
 router.post('/export', authorize('HR_ADMIN', 'LEADERSHIP'), reportController.exportReport);

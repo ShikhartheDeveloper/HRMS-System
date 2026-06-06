@@ -5,7 +5,7 @@ import api from '../../services/api';
 import { Bell, ChevronDown } from 'lucide-react';
 
 const Topbar = ({ title }) => {
-  const { user } = useAuthStore();
+  const { user, profileImageUrl } = useAuthStore();
   const { notifications, unreadCount, setNotifications, markAsRead } = useNotificationStore();
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -91,15 +91,27 @@ const Topbar = ({ title }) => {
 
         {/* User Card */}
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center text-white text-xs font-semibold uppercase shadow-sm">
-            {user?.email ? user.email.substring(0, 2) : 'EM'}
-          </div>
+          {profileImageUrl ? (
+            <img
+              src={profileImageUrl}
+              alt="Avatar"
+              className="h-9 w-9 rounded-full object-cover shadow-sm border border-borderColor"
+            />
+          ) : (
+            <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center text-white text-xs font-semibold uppercase shadow-sm">
+              {user?.employee
+                ? `${user.employee.firstName[0] || ''}${user.employee.lastName[0] || ''}`.toUpperCase()
+                : (user?.email ? user.email.substring(0, 2).toUpperCase() : 'EM')}
+            </div>
+          )}
           <div className="flex flex-col text-left">
             <span className="text-[13px] font-semibold text-textPrimary leading-none">
-              {user?.email ? user.email.split('@')[0] : 'User'}
+              {user?.employee
+                ? `${user.employee.firstName} ${user.employee.lastName}`
+                : (user?.email ? user.email.split('@')[0] : 'User')}
             </span>
             <span className="text-[10px] text-textSecondary font-semibold uppercase leading-none mt-1">
-              {user?.role}
+              {user?.role || 'EMPLOYEE'}
             </span>
           </div>
         </div>

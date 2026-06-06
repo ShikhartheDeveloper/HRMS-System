@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import PageWrapper from '../../components/layout/PageWrapper';
+import useAuthStore from '../../store/authStore';
 import {
   Search,
   Plus,
@@ -10,10 +11,16 @@ import {
   AlertCircle,
   X,
   CheckCircle,
-  HelpCircle
+  HelpCircle,
+  Mail,
+  Eye,
+  Download,
+  FolderOpen,
+  FileText
 } from 'lucide-react';
 
 const EmployeeList = () => {
+  const { user } = useAuthStore();
   const [employees, setEmployees] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 1 });
   const [page, setPage] = useState(1);
@@ -25,7 +32,28 @@ const EmployeeList = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showMailModal, setShowMailModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState(null);
+  const [selectedEmpForDetail, setSelectedEmpForDetail] = useState(null);
+  const [empDocs, setEmpDocs] = useState([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
+
+  const handleOpenDetail = async (emp) => {
+    setSelectedEmpForDetail(emp);
+    setShowDetailModal(true);
+    setLoadingDocs(true);
+    try {
+      const res = await api.get(`/uploads/documents/${emp._id}`);
+      if (res.data.success) {
+        setEmpDocs(res.data.data.filter(d => d.category !== 'profile_image'));
+      }
+    } catch (err) {
+      console.error('Failed to fetch employee documents:', err);
+    } finally {
+      setLoadingDocs(false);
+    }
+  };
 
   // Form states
   const [formFields, setFormFields] = useState({
@@ -45,6 +73,12 @@ const EmployeeList = () => {
   const [formError, setFormError] = useState('');
   const [feedback, setFeedback] = useState('');
   const [managersList, setManagersList] = useState([]);
+
+  // Mail states
+  const [mailSubject, setMailSubject] = useState('');
+  const [mailMessage, setMailMessage] = useState('');
+  const [mailError, setMailError] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   // Fetch employees list
   const fetchEmployees = async () => {
@@ -180,6 +214,37 @@ const EmployeeList = () => {
     }
   };
 
+  const handleOpenMail = (emp) => {
+    setSelectedEmp(emp);
+    setMailSubject('Notice from Human Resources');
+    setMailMessage('');
+    setMailError('');
+    setShowMailModal(true);
+  };
+
+  const handleSendEmail = async (e) => {
+    e.preventDefault();
+    if (!mailSubject || !mailMessage) {
+      return setMailError('Subject and message are required');
+    }
+    setSendingEmail(true); setMailError('');
+    try {
+      const res = await api.post(`/employees/${selectedEmp._id}/send-email`, {
+        subject: mailSubject,
+        message: mailMessage
+      });
+      if (res.data.success) {
+        setShowMailModal(false);
+        setFeedback(`Email successfully sent to ${selectedEmp.firstName} ${selectedEmp.lastName}!`);
+        setTimeout(() => setFeedback(''), 5000);
+      }
+    } catch (err) {
+      setMailError(err.response?.data?.error?.message || 'Failed to send email');
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   const handleBulkImport = async (e) => {
     e.preventDefault();
     setFormError('');
@@ -255,22 +320,24 @@ const EmployeeList = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowImportModal(true)}
-              className="h-10 px-4 border border-borderColor hover:bg-background text-textPrimary rounded-button text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors"
-            >
-              <Upload className="h-4 w-4 text-textSecondary" />
-              Bulk Import
-            </button>
-            <button
-              onClick={handleOpenAdd}
-              className="h-10 px-4 bg-primary hover:bg-primary-hover text-white rounded-button text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors shadow-sm"
-            >
-              <Plus className="h-4 w-4" />
-              Add Employee
-            </button>
-          </div>
+          {user?.role !== 'LEADERSHIP' && (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="h-10 px-4 border border-borderColor hover:bg-background text-textPrimary rounded-button text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+              >
+                <Upload className="h-4 w-4 text-textSecondary" />
+                Bulk Import
+              </button>
+              <button
+                onClick={handleOpenAdd}
+                className="h-10 px-4 bg-primary hover:bg-primary-hover text-white rounded-button text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors shadow-sm"
+              >
+                <Plus className="h-4 w-4" />
+                Add Employee
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Directory Table */}
@@ -305,7 +372,10 @@ const EmployeeList = () => {
                     return (
                       <tr key={emp._id} className="hover:bg-background/40 transition-colors h-14 text-[13px]">
                         {/* Stacked Avatar + Name + ID */}
-                        <td className="px-6 py-2 flex items-center gap-3">
+                        <td
+                          className="px-6 py-2 flex items-center gap-3 cursor-pointer group"
+                          onClick={() => handleOpenDetail(emp)}
+                        >
                           <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs overflow-hidden">
                             {emp.profileImageUrl ? (
                               <img
@@ -318,7 +388,7 @@ const EmployeeList = () => {
                             )}
                           </div>
                           <div className="flex flex-col text-left">
-                            <span className="font-semibold text-textPrimary">
+                            <span className="font-semibold text-textPrimary group-hover:text-primary transition-colors">
                               {emp.firstName} {emp.lastName}
                             </span>
                             <span className="text-[10px] text-textSecondary font-semibold">
@@ -351,19 +421,37 @@ const EmployeeList = () => {
                         <td className="px-6 py-2 text-right">
                           <div className="flex justify-end gap-1.5">
                             <button
-                              onClick={() => handleOpenEdit(emp)}
+                              onClick={() => handleOpenDetail(emp)}
                               className="p-1.5 hover:bg-background rounded text-textSecondary hover:text-textPrimary cursor-pointer transition-colors"
-                              title="Edit Employee"
+                              title="View Details"
                             >
-                              <Edit2 className="h-4 w-4" />
+                              <Eye className="h-4 w-4" />
                             </button>
-                            <button
-                              onClick={() => handleDelete(emp._id)}
-                              className="p-1.5 hover:bg-red-50 rounded text-textSecondary hover:text-danger cursor-pointer transition-colors"
-                              title="Delete Employee"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            {user?.role !== 'LEADERSHIP' && (
+                              <>
+                                <button
+                                  onClick={() => handleOpenMail(emp)}
+                                  className="p-1.5 hover:bg-background rounded text-textSecondary hover:text-textPrimary cursor-pointer transition-colors"
+                                  title="Send Email"
+                                >
+                                  <Mail className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleOpenEdit(emp)}
+                                  className="p-1.5 hover:bg-background rounded text-textSecondary hover:text-textPrimary cursor-pointer transition-colors"
+                                  title="Edit Employee"
+                                >
+                                  <Edit2 className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(emp._id)}
+                                  className="p-1.5 hover:bg-red-50 rounded text-textSecondary hover:text-danger cursor-pointer transition-colors"
+                                  title="Delete Employee"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -772,6 +860,227 @@ const EmployeeList = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: SEND EMAIL */}
+        {showMailModal && selectedEmp && (
+          <div className="fixed inset-0 bg-sidebar/40 backdrop-blur-[4px] flex items-center justify-center z-50 p-4">
+            <div className="bg-surface w-full max-w-[560px] rounded-card border border-borderColor shadow-2xl overflow-hidden animate-fade-in text-left">
+              <div className="px-6 py-4 border-b border-borderColor flex justify-between items-center bg-background">
+                <h3 className="font-bold text-sm text-textPrimary uppercase tracking-wider">Send Email to {selectedEmp.firstName} {selectedEmp.lastName}</h3>
+                <button onClick={() => setShowMailModal(false)} className="text-textSecondary hover:text-textPrimary">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSendEmail} className="p-6 space-y-4">
+                {mailError && (
+                  <div className="flex gap-2 p-3 rounded-button bg-red-50 border border-red-200 text-danger text-[12px] font-medium">
+                    <AlertCircle className="h-4.5 w-4.5 shrink-0" />
+                    <span>{mailError}</span>
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-textSecondary uppercase tracking-wider">Recipient Email</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={selectedEmp.email}
+                    className="w-full h-10 px-3 border border-borderColor rounded-input text-xs bg-background/50 text-textSecondary font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-textSecondary uppercase tracking-wider">Subject</label>
+                  <input
+                    type="text"
+                    required
+                    value={mailSubject}
+                    onChange={(e) => setMailSubject(e.target.value)}
+                    className="w-full h-10 px-3 border border-borderColor rounded-input text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-background text-textPrimary"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-textSecondary uppercase tracking-wider">Message Body</label>
+                  <textarea
+                    rows="6"
+                    required
+                    placeholder="Type your message here..."
+                    value={mailMessage}
+                    onChange={(e) => setMailMessage(e.target.value)}
+                    className="w-full p-3 border border-borderColor rounded-input text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-background text-textPrimary"
+                  ></textarea>
+                </div>
+
+                <div className="pt-4 flex justify-end gap-3 border-t border-borderColor">
+                  <button
+                    type="button"
+                    onClick={() => setShowMailModal(false)}
+                    className="h-10 px-4 border border-borderColor hover:bg-background text-textPrimary text-xs font-semibold rounded-button cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={sendingEmail}
+                    className="h-10 px-6 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-button cursor-pointer disabled:opacity-50"
+                  >
+                    {sendingEmail ? 'Sending...' : 'Send Email'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: VIEW EMPLOYEE DETAILS & DOCUMENTS */}
+        {showDetailModal && selectedEmpForDetail && (
+          <div className="fixed inset-0 bg-sidebar/40 backdrop-blur-[4px] flex items-center justify-center z-50 p-4">
+            <div className="bg-surface w-full max-w-[650px] rounded-card border border-borderColor shadow-2xl overflow-hidden animate-fade-in text-left">
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-borderColor flex justify-between items-center bg-background">
+                <h3 className="font-bold text-sm text-textPrimary uppercase tracking-wider">Employee Profile Details</h3>
+                <button onClick={() => setShowDetailModal(false)} className="text-textSecondary hover:text-textPrimary">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+                {/* Profile Banner */}
+                <div className="flex flex-col sm:flex-row items-center gap-4 bg-background/50 p-4 rounded-card border border-borderColor/50">
+                  <div className="h-16 w-16 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xl overflow-hidden border-2 border-primary/20 shadow-inner">
+                    {selectedEmpForDetail.profileImageUrl ? (
+                      <img
+                        src={selectedEmpForDetail.profileImageUrl}
+                        alt={`${selectedEmpForDetail.firstName} ${selectedEmpForDetail.lastName}`}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      `${selectedEmpForDetail.firstName[0] || ''}${selectedEmpForDetail.lastName[0] || ''}`.toUpperCase()
+                    )}
+                  </div>
+                  <div className="text-center sm:text-left">
+                    <h4 className="text-base font-extrabold text-textPrimary">
+                      {selectedEmpForDetail.firstName} {selectedEmpForDetail.lastName}
+                    </h4>
+                    <p className="text-xs text-textSecondary font-semibold">
+                      {selectedEmpForDetail.designation} • {selectedEmpForDetail.department}
+                    </p>
+                    <span className="inline-block mt-2 px-2.5 py-0.5 rounded-badge text-[10px] font-bold bg-primary/10 text-primary uppercase">
+                      ID: {selectedEmpForDetail.employeeId}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Profile Grid */}
+                <div className="grid grid-cols-2 gap-4 text-xs font-semibold">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-textSecondary uppercase tracking-wider block">Email Address</span>
+                    <span className="text-textPrimary font-semibold">{selectedEmpForDetail.email}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-textSecondary uppercase tracking-wider block">Phone Number</span>
+                    <span className="text-textPrimary font-semibold">{selectedEmpForDetail.phone || 'N/A'}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-textSecondary uppercase tracking-wider block">Role</span>
+                    <span className="text-textPrimary font-semibold uppercase">{selectedEmpForDetail.role || 'EMPLOYEE'}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-textSecondary uppercase tracking-wider block">Status</span>
+                    <span className="text-textPrimary font-semibold">{selectedEmpForDetail.status}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-textSecondary uppercase tracking-wider block">Manager</span>
+                    <span className="text-textPrimary font-semibold">
+                      {selectedEmpForDetail.managerId
+                        ? typeof selectedEmpForDetail.managerId === 'object'
+                          ? `${selectedEmpForDetail.managerId.firstName} ${selectedEmpForDetail.managerId.lastName}`
+                          : selectedEmpForDetail.managerId
+                        : 'None'}
+                    </span>
+                  </div>
+                  {/* Salary section restricted to HR_ADMIN / LEADERSHIP */}
+                  {['HR_ADMIN', 'LEADERSHIP'].includes(user?.role) && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-textSecondary uppercase tracking-wider block">Annual Salary</span>
+                      <span className="text-textPrimary font-bold text-success">
+                        ${selectedEmpForDetail.salary?.toLocaleString() || '0'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Documents Section */}
+                <div className="space-y-3 pt-4 border-t border-borderColor">
+                  <h4 className="text-xs font-bold text-textPrimary uppercase tracking-wider flex items-center gap-2">
+                    <FolderOpen className="h-4.5 w-4.5 text-primary" />
+                    Uploaded Documents
+                  </h4>
+
+                  {loadingDocs ? (
+                    <div className="py-8 text-center text-xs text-textSecondary font-semibold">
+                      Loading documents...
+                    </div>
+                  ) : empDocs.length === 0 ? (
+                    <div className="py-8 text-center text-xs text-textSecondary bg-background/50 border border-dashed border-borderColor rounded-card font-medium">
+                      No documents uploaded for this employee.
+                    </div>
+                  ) : (
+                    <div className="border border-borderColor rounded-card overflow-hidden divide-y divide-borderColor/60">
+                      {empDocs.map((doc) => (
+                        <div key={doc._id} className="p-3 bg-background/30 flex justify-between items-center text-xs">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <FileText className="h-4 w-4 text-primary shrink-0" />
+                            <div className="min-w-0 flex flex-col text-left">
+                              <span className="font-semibold text-textPrimary truncate max-w-[280px]" title={doc.originalName}>
+                                {doc.originalName}
+                              </span>
+                              <span className="text-[9px] text-textSecondary uppercase font-bold">
+                                {doc.category?.replace('_', ' ')}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => window.open(doc.signedUrl, '_blank')}
+                              className="h-7 px-2.5 text-[10px] border border-borderColor hover:bg-background text-textPrimary rounded-button font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                            >
+                              <Eye className="h-3 w-3" />
+                              View
+                            </button>
+                            <a
+                              href={doc.signedUrl}
+                              download={doc.originalName}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="h-7 px-2.5 text-[10px] bg-primary hover:bg-primary-hover text-white rounded-button font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                            >
+                              <Download className="h-3 w-3" />
+                              Download
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 border-t border-borderColor flex justify-end bg-background">
+                <button
+                  type="button"
+                  onClick={() => setShowDetailModal(false)}
+                  className="h-9 px-4 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-button cursor-pointer transition-colors"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         )}

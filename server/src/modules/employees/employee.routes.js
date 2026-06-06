@@ -20,5 +20,6 @@ router.get('/:id', employeeController.getEmployee);
 router.post('/', authorize('HR_ADMIN'), employeeController.createEmployee);
 router.put('/:id', authorize('HR_ADMIN'), employeeController.updateEmployee);
 router.delete('/:id', authorize('HR_ADMIN'), employeeController.deleteEmployee);
+router.post('/:id/send-email', authorize('HR_ADMIN', 'MANAGER', 'LEADERSHIP'), employeeController.sendEmployeeEmail);
 
 export default router;

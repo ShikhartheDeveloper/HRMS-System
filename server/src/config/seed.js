@@ -102,6 +102,31 @@ export const seedDatabase = async () => {
     });
 
     console.log(`Employee seeded: ${standardEmployee.firstName} ${standardEmployee.lastName} (reports to Jane Manager)`);
+
+    // 5. Create Leadership User
+    const leadershipUser = await User.create({
+      email: 'leadership@default.com',
+      password: 'Password123',
+      role: 'LEADERSHIP',
+      tenantId: tenant._id
+    });
+
+    const leadershipEmployee = await Employee.create({
+      tenantId: tenant._id,
+      userId: leadershipUser._id,
+      employeeId: 'EMP-2026-0004',
+      firstName: 'Robert',
+      lastName: 'Director',
+      email: 'leadership@default.com',
+      phone: '4567890123',
+      department: 'Executive',
+      designation: 'Managing Director',
+      role: 'LEADERSHIP',
+      salary: 180000,
+      status: 'Active'
+    });
+
+    console.log(`Leadership seeded: ${leadershipEmployee.firstName} ${leadershipEmployee.lastName}`);
     console.log('Seeding completed successfully!');
   } catch (error) {
     console.error('Seeding database failed:', error.message);

@@ -328,20 +328,26 @@ const Dashboard = () => {
                               </span>
                             </div>
                           </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleApproveLeave(req._id, 'Approved')}
-                              className="h-8 px-3.5 text-[11px] bg-success hover:bg-success/90 text-white rounded-button font-bold cursor-pointer transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-sm hover:shadow-success/15"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => handleApproveLeave(req._id, 'Rejected')}
-                              className="h-8 px-3.5 text-[11px] border border-danger text-danger hover:bg-danger/5 rounded-button font-bold cursor-pointer transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-                            >
-                              Reject
-                            </button>
-                          </div>
+                          {user?.role === 'LEADERSHIP' ? (
+                            <span className="text-[11px] bg-warning/10 text-warning px-2.5 py-1 rounded-badge font-semibold">
+                              Pending Review
+                            </span>
+                          ) : (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleApproveLeave(req._id, 'Approved')}
+                                className="h-8 px-3.5 text-[11px] bg-success hover:bg-success/90 text-white rounded-button font-bold cursor-pointer transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-sm hover:shadow-success/15"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleApproveLeave(req._id, 'Rejected')}
+                                className="h-8 px-3.5 text-[11px] border border-danger text-danger hover:bg-danger/5 rounded-button font-bold cursor-pointer transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -368,23 +374,32 @@ const Dashboard = () => {
                   <Clock className="h-6.5 w-6.5 text-primary group-hover:scale-110 transition-transform duration-200" />
                   <span className="text-xs font-bold text-textPrimary">Clock Records</span>
                 </a>
+                {user?.role === 'HR_ADMIN' && (
+                  <a
+                    href="/employees"
+                    className="flex flex-col items-center justify-center p-5 rounded-button bg-background border border-borderColor hover:border-primary/45 text-center space-y-2 group transition-all duration-200 hover:bg-white hover:shadow-md hover:shadow-primary/5"
+                  >
+                    <UserCheck className="h-6.5 w-6.5 text-primary group-hover:scale-110 transition-transform duration-200" />
+                    <span className="text-xs font-bold text-textPrimary">Add Employee</span>
+                  </a>
+                )}
+                {user?.role === 'LEADERSHIP' && (
+                  <a
+                    href="/employees"
+                    className="flex flex-col items-center justify-center p-5 rounded-button bg-background border border-borderColor hover:border-primary/45 text-center space-y-2 group transition-all duration-200 hover:bg-white hover:shadow-md hover:shadow-primary/5"
+                  >
+                    <Users className="h-6.5 w-6.5 text-primary group-hover:scale-110 transition-transform duration-200" />
+                    <span className="text-xs font-bold text-textPrimary">Employees</span>
+                  </a>
+                )}
                 {['HR_ADMIN', 'LEADERSHIP'].includes(user?.role) && (
-                  <>
-                    <a
-                      href="/employees"
-                      className="flex flex-col items-center justify-center p-5 rounded-button bg-background border border-borderColor hover:border-primary/45 text-center space-y-2 group transition-all duration-200 hover:bg-white hover:shadow-md hover:shadow-primary/5"
-                    >
-                      <UserCheck className="h-6.5 w-6.5 text-primary group-hover:scale-110 transition-transform duration-200" />
-                      <span className="text-xs font-bold text-textPrimary">Add Employee</span>
-                    </a>
-                    <a
-                      href="/reports"
-                      className="flex flex-col items-center justify-center p-5 rounded-button bg-background border border-borderColor hover:border-primary/45 text-center space-y-2 group transition-all duration-200 hover:bg-white hover:shadow-md hover:shadow-primary/5"
-                    >
-                      <CheckSquare className="h-6.5 w-6.5 text-primary group-hover:scale-110 transition-transform duration-200" />
-                      <span className="text-xs font-bold text-textPrimary">Run Reports</span>
-                    </a>
-                  </>
+                  <a
+                    href="/reports"
+                    className="flex flex-col items-center justify-center p-5 rounded-button bg-background border border-borderColor hover:border-primary/45 text-center space-y-2 group transition-all duration-200 hover:bg-white hover:shadow-md hover:shadow-primary/5"
+                  >
+                    <CheckSquare className="h-6.5 w-6.5 text-primary group-hover:scale-110 transition-transform duration-200" />
+                    <span className="text-xs font-bold text-textPrimary">Run Reports</span>
+                  </a>
                 )}
               </div>
             </div>

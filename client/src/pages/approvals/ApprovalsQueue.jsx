@@ -134,22 +134,28 @@ const ApprovalsQueue = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="flex gap-2 w-full sm:w-auto shrink-0 justify-end">
-                      <button
-                        onClick={() => handleReviewLeave(req._id, 'Approved')}
-                        className="h-9 px-4 bg-success hover:bg-success/90 text-white text-xs font-semibold rounded-button cursor-pointer flex items-center gap-1.5"
-                      >
-                        <CheckSquare className="h-4 w-4" />
-                        Approve
-                      </button>
-                      <button
-                        onClick={() => handleReviewLeave(req._id, 'Rejected')}
-                        className="h-9 px-4 border border-danger text-danger hover:bg-danger/5 text-xs font-semibold rounded-button cursor-pointer flex items-center gap-1.5"
-                      >
-                        <XSquare className="h-4 w-4" />
-                        Reject
-                      </button>
-                    </div>
+                    {user?.role === 'LEADERSHIP' ? (
+                      <div className="shrink-0 text-[11px] bg-warning/10 text-warning px-3 py-1.5 rounded-badge font-semibold">
+                        Read Only Review Access
+                      </div>
+                    ) : (
+                      <div className="flex gap-2 w-full sm:w-auto shrink-0 justify-end">
+                        <button
+                          onClick={() => handleReviewLeave(req._id, 'Approved')}
+                          className="h-9 px-4 bg-success hover:bg-success/90 text-white text-xs font-semibold rounded-button cursor-pointer flex items-center gap-1.5"
+                        >
+                          <CheckSquare className="h-4 w-4" />
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => handleReviewLeave(req._id, 'Rejected')}
+                          className="h-9 px-4 border border-danger text-danger hover:bg-danger/5 text-xs font-semibold rounded-button cursor-pointer flex items-center gap-1.5"
+                        >
+                          <XSquare className="h-4 w-4" />
+                          Reject
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))
               )}
@@ -183,22 +189,28 @@ const ApprovalsQueue = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-2 w-full sm:w-auto shrink-0 justify-end">
-                      <button
-                        onClick={() => handleReviewReg(req._id, 'Approved')}
-                        className="h-9 px-4 bg-success hover:bg-success/90 text-white text-xs font-semibold rounded-button cursor-pointer flex items-center gap-1.5"
-                      >
-                        <CheckSquare className="h-4 w-4" />
-                        Approve
-                      </button>
-                      <button
-                        onClick={() => handleReviewReg(req._id, 'Rejected')}
-                        className="h-9 px-4 border border-danger text-danger hover:bg-danger/5 text-xs font-semibold rounded-button cursor-pointer flex items-center gap-1.5"
-                      >
-                        <XSquare className="h-4 w-4" />
-                        Reject
-                      </button>
-                    </div>
+                    {user?.role === 'LEADERSHIP' ? (
+                      <div className="shrink-0 text-[11px] bg-warning/10 text-warning px-3 py-1.5 rounded-badge font-semibold">
+                        Read Only Review Access
+                      </div>
+                    ) : (
+                      <div className="flex gap-2 w-full sm:w-auto shrink-0 justify-end">
+                        <button
+                          onClick={() => handleReviewReg(req._id, 'Approved')}
+                          className="h-9 px-4 bg-success hover:bg-success/90 text-white text-xs font-semibold rounded-button cursor-pointer flex items-center gap-1.5"
+                        >
+                          <CheckSquare className="h-4 w-4" />
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => handleReviewReg(req._id, 'Rejected')}
+                          className="h-9 px-4 border border-danger text-danger hover:bg-danger/5 text-xs font-semibold rounded-button cursor-pointer flex items-center gap-1.5"
+                        >
+                          <XSquare className="h-4 w-4" />
+                          Reject
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))
               )}

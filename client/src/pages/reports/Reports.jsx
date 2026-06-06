@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import PageWrapper from '../../components/layout/PageWrapper';
+import useAuthStore from '../../store/authStore';
 import {
   BarChart3,
   Users,
@@ -9,7 +10,8 @@ import {
   TrendingDown,
   Download,
   CheckCircle,
-  Loader2
+  Loader2,
+  DollarSign
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -26,10 +28,12 @@ import {
 } from 'recharts';
 
 const Reports = () => {
+  const { user } = useAuthStore();
   const [headcount, setHeadcount] = useState(null);
   const [attendance, setAttendance] = useState(null);
   const [leaveUsage, setLeaveUsage] = useState([]);
   const [attrition, setAttrition] = useState(null);
+  const [salaryFlow, setSalaryFlow] = useState(null);
   const [loading, setLoading] = useState(true);
   const [exportStatus, setExportStatus] = useState(''); // 'pending', 'completed', 'failed'
   const [exportUrl, setExportUrl] = useState('');
@@ -41,17 +45,19 @@ const Reports = () => {
     const fetchAll = async () => {
       setLoading(true);
       try {
-        const [hRes, aRes, lRes, atRes] = await Promise.all([
+        const [hRes, aRes, lRes, atRes, sRes] = await Promise.all([
           api.get('/reports/headcount'),
           api.get('/reports/attendance-summary'),
           api.get('/reports/leave-usage'),
-          api.get('/reports/attrition')
+          api.get('/reports/attrition'),
+          api.get('/reports/salary-flow')
         ]);
 
         if (hRes.data.success) setHeadcount(hRes.data.data);
         if (aRes.data.success) setAttendance(aRes.data.data);
         if (lRes.data.success) setLeaveUsage(lRes.data.data);
         if (atRes.data.success) setAttrition(atRes.data.data);
+        if (sRes.data.success) setSalaryFlow(sRes.data.data);
       } catch (err) {
         console.error('Reports fetch error:', err);
       } finally {
@@ -382,6 +388,82 @@ const Reports = () => {
             </button>
           </div>
         </div>
+
+        {/* Salary & Workforce Cost Insights */}
+        {salaryFlow && (
+          <div className="space-y-4">
+            <h2 className="text-sm font-bold text-textPrimary uppercase tracking-wider flex items-center gap-2 border-t border-borderColor/55 pt-6">
+              <DollarSign className="h-4.5 w-4.5 text-primary" />
+              Salary & Workforce Cost Insights
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="bg-surface p-5 rounded-card border border-borderColor shadow-custom hover:shadow-glow hover:border-primary/15 transition-all duration-200">
+                <span className="text-[11px] font-semibold text-textSecondary uppercase tracking-wider block mb-1">Total Payroll Flow (Sum)</span>
+                <span className="text-3xl font-extrabold text-textPrimary">${salaryFlow.totalSalary?.toLocaleString()} / yr</span>
+              </div>
+              <div className="bg-surface p-5 rounded-card border border-borderColor shadow-custom hover:shadow-glow hover:border-primary/15 transition-all duration-200">
+                <span className="text-[11px] font-semibold text-textSecondary uppercase tracking-wider block mb-1">Average Salary Flow</span>
+                <span className="text-3xl font-extrabold text-primary">${salaryFlow.averageSalary?.toLocaleString()} / yr</span>
+              </div>
+            </div>
+
+            {/* Department Payroll Breakdown */}
+            {salaryFlow.departmentSalaryDistribution?.length > 0 && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-2">
+                {/* Recharts BarChart */}
+                <div className="lg:col-span-2 bg-surface p-6 rounded-card border border-borderColor shadow-custom space-y-4 hover:shadow-glow hover:border-primary/10 transition-all duration-200 text-left">
+                  <h3 className="text-xs font-bold text-textPrimary uppercase tracking-wider">Department Payroll Allocation</h3>
+                  <div className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={salaryFlow.departmentSalaryDistribution.map(item => ({ name: item.department, salary: item.totalSalary }))} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                        <XAxis dataKey="name" tick={{ fill: '#64748B', fontSize: 11 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: '#64748B', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(val) => `$${val.toLocaleString()}`} />
+                        <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Total Payroll']} contentStyle={{ background: '#0F172A', borderRadius: '10px', color: '#fff', fontSize: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                        <Bar dataKey="salary" fill="#4F46E5" radius={[4, 4, 0, 0]} barSize={28}>
+                          {salaryFlow.departmentSalaryDistribution.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Table Breakdown */}
+                <div className="bg-surface rounded-card border border-borderColor shadow-custom overflow-hidden flex flex-col justify-between hover:shadow-glow hover:border-primary/5 transition-all duration-200">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 text-[10px] font-semibold text-textSecondary uppercase tracking-wider border-b border-borderColor">
+                        <th className="px-5 py-3.5">Department</th>
+                        <th className="px-5 py-3.5">Headcount</th>
+                        <th className="px-5 py-3.5">Total Payroll</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-borderColor/50 text-[13px]">
+                      {salaryFlow.departmentSalaryDistribution.map((item, idx) => (
+                        <tr key={idx} className="hover:bg-background/40 transition-colors">
+                          <td className="px-5 py-3.5 font-bold text-textPrimary">{item.department}</td>
+                          <td className="px-5 py-3.5 text-textSecondary">{item.count}</td>
+                          <td className="px-5 py-3.5 font-extrabold text-primary">${item.totalSalary?.toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div className="px-5 py-3.5 border-t border-borderColor/60 flex justify-end bg-slate-50/50">
+                    <button
+                      onClick={() => handleExport('salary-flow')}
+                      className="h-8 px-3 border border-borderColor hover:bg-surface text-textPrimary rounded-button text-[11px] font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      Export Payroll CSV
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </PageWrapper>
   );

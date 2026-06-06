@@ -49,10 +49,22 @@ export const getAttrition = async (req, res, next) => {
   }
 };
 
+export const getSalaryFlows = async (req, res, next) => {
+  try {
+    const stats = await reportService.getSalaryFlowStats(req.user.tenantId);
+    res.status(200).json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const exportReport = async (req, res, next) => {
   try {
     const { type } = req.body;
-    if (!type || !['headcount', 'attendance-summary', 'leave-usage', 'attrition'].includes(type)) {
+    if (!type || !['headcount', 'attendance-summary', 'leave-usage', 'attrition', 'salary-flow'].includes(type)) {
       return res.status(400).json({
         success: false,
         error: { code: 'BAD_REQUEST', message: 'Invalid or missing report type for export' }

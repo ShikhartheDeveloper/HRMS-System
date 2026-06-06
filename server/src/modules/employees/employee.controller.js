@@ -2,6 +2,7 @@ import * as employeeService from './employee.service.js';
 import Employee from './employee.model.js';
 import { paginate } from '../../utils/paginate.js';
 import { getSignedDownloadUrl } from '../../config/s3Client.js';
+import { sendEmail } from '../../utils/sendEmail.js';
 
 // Safe helper to resolve S3 key to signed URL
 const resolveProfileImageUrl = async (key) => {
@@ -190,3 +191,62 @@ export const bulkImport = async (req, res, next) => {
     next(error);
   }
 };
+
+export const sendEmployeeEmail = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { subject, message } = req.body;
+
+    if (!subject || !message) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'BAD_REQUEST', message: 'Subject and message fields are required' }
+      });
+    }
+
+    // Scoped query ensures that users can only find employees belonging to their own tenant
+    const employee = await Employee.findOne(req.scopeQuery({ _id: id }));
+    if (!employee) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'EMPLOYEE_NOT_FOUND', message: 'Employee not found' }
+      });
+    }
+
+    const emailSent = await sendEmail({
+      to: employee.email,
+      subject: subject,
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #e2e8f0; border-radius: 14px; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+          <div style="text-align: center; border-bottom: 2px solid #4f46e5; padding-bottom: 20px;">
+            <h2 style="color: #4f46e5; margin: 0; font-size: 24px;">HRMS Portal Notice</h2>
+            <p style="color: #64748b; margin: 5px 0 0 0; font-size: 14px;">Official Communication</p>
+          </div>
+          <div style="padding: 25px 0; color: #334155; font-size: 14px; line-height: 1.6;">
+            <p>Dear ${employee.firstName} ${employee.lastName},</p>
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; white-space: pre-wrap; font-size: 14.5px; color: #0f172a; margin-top: 15px; margin-bottom: 15px;">${message}</div>
+            <p style="color: #64748b; font-size: 12px; margin-top: 25px;">Please review the above notice from human resources or your manager. If you have any questions, contact your designated HR representative.</p>
+          </div>
+          <div style="border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center; font-size: 11px; color: #94a3b8;">
+            This is an official communication sent via the HRMS portal.
+          </div>
+        </div>
+      `
+    });
+
+    if (!emailSent) {
+      return res.status(500).json({
+        success: false,
+        error: { code: 'EMAIL_SEND_FAILED', message: 'Failed to send email message via SMTP transporter' }
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Email sent successfully to employee'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

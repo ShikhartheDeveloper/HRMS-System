@@ -7,6 +7,8 @@ const router = express.Router();
 
 // Public Subdomain Discovery
 router.get('/tenant-lookup', authController.lookupTenant);
+router.post('/register-send-otp', authController.registerSendOtp);
+router.post('/register-verify-otp', authController.registerVerifyOtp);
 
 // Authentication Endpoints
 router.post('/login', authRateLimiter, authController.login);

@@ -84,6 +84,24 @@ export const getLeaveUsage = async (tenantId) => {
   return leaveCounts;
 };
 
+export const getSalaryFlowStats = async (tenantId) => {
+  const employees = await Employee.find({ tenantId, status: 'Active', isDeleted: { $ne: true } }).lean();
+  const totalSalary = employees.reduce((sum, emp) => sum + (emp.salary || 0), 0);
+  const averageSalary = employees.length > 0 ? parseFloat((totalSalary / employees.length).toFixed(2)) : 0;
+
+  const deptSalaryBreakdown = await Employee.aggregate([
+    { $match: { tenantId, status: 'Active', isDeleted: { $ne: true } } },
+    { $group: { _id: '$department', totalSalary: { $sum: '$salary' }, count: { $sum: 1 } } },
+    { $project: { department: '$_id', totalSalary: 1, count: 1, _id: 0 } }
+  ]);
+
+  return {
+    totalSalary,
+    averageSalary,
+    departmentSalaryDistribution: deptSalaryBreakdown
+  };
+};
+
 export const getAttritionStats = async (tenantId) => {
   const active = await Employee.countDocuments({ tenantId, status: 'Active' });
   const terminated = await Employee.countDocuments({ tenantId, status: 'Terminated' });
@@ -138,6 +156,12 @@ const processExportJob = async (jobId, type, tenantId) => {
       csvContent = 'Employee ID,Name,Email,Department,Designation,Date of Joining\n';
       employees.forEach(e => {
         csvContent += `"${e.employeeId}","${e.firstName} ${e.lastName}","${e.email}","${e.department}","${e.designation}","${e.dateOfJoining ? new Date(e.dateOfJoining).toLocaleDateString() : ''}"\n`;
+      });
+    } else if (type === 'salary-flow') {
+      const employees = await Employee.find({ tenantId, status: 'Active' }).lean();
+      csvContent = 'Employee ID,First Name,Last Name,Department,Designation,Salary\n';
+      employees.forEach(e => {
+        csvContent += `"${e.employeeId}","${e.firstName}","${e.lastName}","${e.department}","${e.designation}",${e.salary || 0}\n`;
       });
     }
 

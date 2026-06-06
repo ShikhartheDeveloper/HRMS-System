@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 const Sidebar = () => {
-  const { user, clearAuth } = useAuthStore();
+  const { user, clearAuth, profileImageUrl } = useAuthStore();
   const location = useLocation();
 
   const handleLogout = () => {
@@ -35,7 +35,7 @@ const Sidebar = () => {
       label: 'PEOPLE',
       items: [
         { name: 'My Profile', path: '/profile', icon: User, roles: ['EMPLOYEE', 'MANAGER', 'HR_ADMIN', 'LEADERSHIP'] },
-        { name: 'All Employees', path: '/employees', icon: Users, roles: ['HR_ADMIN', 'LEADERSHIP'] },
+        { name: 'All Employees', path: '/employees', icon: Users, roles: ['HR_ADMIN', 'LEADERSHIP', 'MANAGER'] },
         { name: 'Org Chart', path: '/org-chart', icon: GitFork, roles: ['HR_ADMIN', 'LEADERSHIP'] },
         { name: 'Documents', path: '/documents', icon: FolderOpen, roles: ['EMPLOYEE', 'MANAGER', 'HR_ADMIN', 'LEADERSHIP'] }
       ]
@@ -110,12 +110,26 @@ const Sidebar = () => {
       {/* Footer / Logout */}
       <div className="p-4 border-t border-gray-800 flex flex-col gap-3">
         <div className="flex items-center gap-3 px-2">
-          <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-semibold uppercase">
-            {user?.email ? user.email.substring(0, 2) : 'HR'}
-          </div>
-          <div className="flex flex-col overflow-hidden">
-            <span className="text-[12px] font-medium text-white truncate">{user?.email}</span>
-            <span className="text-[10px] text-gray-500 font-semibold uppercase">{user?.role}</span>
+          {profileImageUrl ? (
+            <img
+              src={profileImageUrl}
+              alt="Avatar"
+              className="h-8 w-8 rounded-full object-cover shadow-sm border border-gray-800"
+            />
+          ) : (
+            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-semibold uppercase">
+              {user?.employee
+                ? `${user.employee.firstName[0] || ''}${user.employee.lastName[0] || ''}`.toUpperCase()
+                : (user?.email ? user.email.substring(0, 2).toUpperCase() : 'HR')}
+            </div>
+          )}
+          <div className="flex flex-col overflow-hidden text-left">
+            <span className="text-[12px] font-medium text-white truncate">
+              {user?.employee
+                ? `${user.employee.firstName} ${user.employee.lastName}`
+                : (user?.email ? user.email.split('@')[0] : 'User')}
+            </span>
+            <span className="text-[10px] text-gray-500 font-semibold uppercase">{user?.role || 'EMPLOYEE'}</span>
           </div>
         </div>
         <button

@@ -140,6 +140,15 @@ const Login = () => {
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
   const [countdown, setCountdown] = useState(0);
 
+  // Registration states
+  const [regOrgName, setRegOrgName] = useState('');
+  const [regSubdomain, setRegSubdomain] = useState('');
+  const [regFirstName, setRegFirstName] = useState('');
+  const [regLastName, setRegLastName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regOtpDigits, setRegOtpDigits] = useState(['', '', '', '', '', '']);
+
   useEffect(() => {
     let timer;
     if (countdown > 0) timer = setTimeout(() => setCountdown(countdown - 1), 1000);
@@ -162,6 +171,99 @@ const Login = () => {
     const saved = localStorage.getItem('hrms_subdomain');
     if (saved) setSubdomain(saved);
   }, []);
+
+  const handleRegisterOrg = async (e) => {
+    e.preventDefault();
+    if (!regOrgName || !regSubdomain || !regFirstName || !regLastName || !regEmail || !regPassword) {
+      return setError('All registration fields are required');
+    }
+    setLoading(true); setError('');
+    try {
+      const res = await api.post('/auth/register-send-otp', {
+        orgName: regOrgName,
+        subdomain: regSubdomain.toLowerCase().trim(),
+        adminFirstName: regFirstName,
+        adminLastName: regLastName,
+        adminEmail: regEmail.toLowerCase().trim(),
+        adminPassword: regPassword
+      });
+      if (res.data.success) {
+        setStep(6);
+        setRegOtpDigits(['','','','','','']);
+        setError('');
+      }
+    } catch (err) {
+      setError(err.response?.data?.error?.message || 'Organization registration failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyRegisterOtp = async (e) => {
+    e.preventDefault();
+    const code = regOtpDigits.join('');
+    if (code.length < 6) return setError('Enter 6-digit verification code');
+    setLoading(true); setError('');
+    try {
+      const res = await api.post('/auth/register-verify-otp', {
+        email: regEmail.toLowerCase().trim(),
+        otpCode: code
+      });
+      if (res.data.success) {
+        const sub = regSubdomain.toLowerCase().trim();
+        setSubdomain(sub);
+        localStorage.setItem('hrms_subdomain', sub);
+        setAuth(res.data.data.user, res.data.data.token);
+        setRegOrgName('');
+        setRegSubdomain('');
+        setRegFirstName('');
+        setRegLastName('');
+        setRegEmail('');
+        setRegPassword('');
+        setRegOtpDigits(['','','','','','']);
+        setError('');
+        navigate('/dashboard');
+      }
+    } catch (err) {
+      setError(err.response?.data?.error?.message || 'Verification failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendRegisterOtp = async () => {
+    setLoading(true); setError('');
+    try {
+      const res = await api.post('/auth/register-send-otp', {
+        orgName: regOrgName,
+        subdomain: regSubdomain.toLowerCase().trim(),
+        adminFirstName: regFirstName,
+        adminLastName: regLastName,
+        adminEmail: regEmail.toLowerCase().trim(),
+        adminPassword: regPassword
+      });
+      if (res.data.success) {
+        setRegOtpDigits(['','','','','','']);
+        setError('');
+      }
+    } catch (err) {
+      setError(err.response?.data?.error?.message || 'Failed to resend code');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegOtpDigitChange = (i, v) => {
+    if (!/^\d*$/.test(v)) return;
+    const d = [...regOtpDigits]; d[i] = v.slice(-1); setRegOtpDigits(d);
+    if (v && i < 5) document.getElementById(`reg-otp-${i + 1}`)?.focus();
+  };
+  const handleRegOtpKeyDown = (i, e) => {
+    if (e.key === 'Backspace' && !regOtpDigits[i] && i > 0) {
+      document.getElementById(`reg-otp-${i - 1}`)?.focus();
+      const d = [...regOtpDigits]; d[i - 1] = ''; setRegOtpDigits(d);
+    }
+  };
 
   const handleLookupSubdomain = async (e) => {
     e.preventDefault();
@@ -246,12 +348,16 @@ const Login = () => {
           {step === 1 ? 'Enter workspace' :
            step === 2 ? `Sign in to ${tenant?.name}` :
            step === 3 ? `${ssoProvider === 'google' ? 'Google' : 'Microsoft'} Sign-In` :
+           step === 5 ? 'Register organization' :
+           step === 6 ? 'Verify registration' :
            'Verify Code'}
         </h2>
         <p className="text-[11px] font-normal leading-relaxed" style={{ color: 'rgba(232,244,248,0.35)' }}>
           {step === 1 ? 'Enter your organization subdomain to access your HR workspace.' :
            step === 2 ? `Secure login for ${subdomain}.hrms.local` :
            step === 3 ? 'Enter your registered email address.' :
+           step === 5 ? 'Set up a new workspace and HR administrator account.' :
+           step === 6 ? `Enter the 6-digit code sent to ${regEmail}.` :
            `Enter the 6-digit code sent to ${ssoEmail}.`}
         </p>
       </div>
@@ -289,6 +395,9 @@ const Login = () => {
           <LiquidButton type="submit" disabled={loading}>
             {loading ? 'Searching...' : 'Continue'} <ArrowRight className="h-3.5 w-3.5" />
           </LiquidButton>
+          <button type="button" onClick={() => { setError(''); setStep(5); }} className="w-full text-center text-[10px] font-bold mt-4 transition-colors hover:text-[#00F5D4]" style={{ color: 'rgba(232,244,248,0.25)' }}>
+            Create a new organization
+          </button>
         </form>
       )}
 
@@ -401,6 +510,92 @@ const Login = () => {
             <button type="button" onClick={handleResendOtp} disabled={loading || countdown > 0}
               className="disabled:opacity-40" style={{ color: '#00F5D4' }}>
               {countdown > 0 ? `Resend in ${countdown}s` : 'Resend Code'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Step 5: Register Organization */}
+      {step === 5 && (
+        <form onSubmit={handleRegisterOrg} className="space-y-4 text-left animate-fade-in">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(232,244,248,0.3)' }}>Company Name</label>
+              <NeonInput type="text" placeholder="e.g. Acme Corp" value={regOrgName} onChange={(e) => setRegOrgName(e.target.value)} disabled={loading} required />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(232,244,248,0.3)' }}>Subdomain</label>
+              <div className="relative flex items-center">
+                <NeonInput type="text" placeholder="acme" value={regSubdomain} onChange={(e) => setRegSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} disabled={loading} required />
+                <span className="absolute right-0 text-[8px] font-extrabold tracking-wider" style={{ color: 'rgba(0,245,212,0.35)' }}>.hrms</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(232,244,248,0.3)' }}>Admin First Name</label>
+              <NeonInput type="text" placeholder="John" value={regFirstName} onChange={(e) => setRegFirstName(e.target.value)} disabled={loading} required />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(232,244,248,0.3)' }}>Admin Last Name</label>
+              <NeonInput type="text" placeholder="Doe" value={regLastName} onChange={(e) => setRegLastName(e.target.value)} disabled={loading} required />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(232,244,248,0.3)' }}>Admin Email</label>
+            <NeonInput type="email" placeholder="admin@acme.com" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} disabled={loading} required />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(232,244,248,0.3)' }}>Admin Password</label>
+            <NeonInput type="password" placeholder="••••••••" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} disabled={loading} required />
+          </div>
+
+          <div className="pt-2">
+            <LiquidButton type="submit" disabled={loading}>
+              {loading ? 'Registering...' : 'Register Organization'}
+            </LiquidButton>
+          </div>
+
+          <button type="button" onClick={() => { setError(''); setStep(1); }} className="w-full text-center text-[10px] font-bold mt-3 flex items-center justify-center gap-1 transition-colors hover:text-[#00F5D4]" style={{ color: 'rgba(232,244,248,0.2)' }}>
+            <ArrowLeft className="h-3 w-3" /> Back to workspace lookup
+          </button>
+        </form>
+      )}
+
+      {/* Step 6: Register OTP Verification */}
+      {step === 6 && (
+        <form onSubmit={handleVerifyRegisterOtp} className="space-y-5 text-left animate-fade-in">
+          <div className="space-y-4">
+            <label className="text-[9px] font-bold uppercase tracking-[0.2em] block text-center" style={{ color: 'rgba(232,244,248,0.3)' }}>Verification Code</label>
+            <div className="flex justify-center gap-2.5">
+              {regOtpDigits.map((d, i) => (
+                <input
+                  key={i} id={`reg-otp-${i}`} type="text" maxLength="1" value={d}
+                  onChange={(e) => handleRegOtpDigitChange(i, e.target.value)}
+                  onKeyDown={(e) => handleRegOtpKeyDown(i, e)}
+                  disabled={loading}
+                  className="w-11 h-13 text-center text-lg font-bold rounded-lg focus:outline-none transition-all duration-300"
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: d ? '1px solid rgba(0,245,212,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                    color: '#E8F4F8',
+                    boxShadow: d ? '0 0 12px rgba(0,245,212,0.1)' : 'none',
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+          <LiquidButton type="submit" disabled={loading}>
+            {loading ? 'Verifying...' : 'Verify & Sign In'}
+          </LiquidButton>
+          <div className="flex justify-between items-center text-[10px] font-bold mt-4">
+            <button type="button" onClick={() => { setError(''); setStep(5); }} style={{ color: 'rgba(232,244,248,0.25)' }}>Back to Register</button>
+            <button type="button" onClick={handleResendRegisterOtp} disabled={loading}
+              style={{ color: '#00F5D4' }}>
+              Resend Code
             </button>
           </div>
         </form>
