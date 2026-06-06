@@ -141,13 +141,20 @@ const Login = () => {
   const [countdown, setCountdown] = useState(0);
 
   // Registration states
-  const [regOrgName, setRegOrgName] = useState('Redvision');
-  const [regSubdomain, setRegSubdomain] = useState('redvision');
-  const [regFirstName, setRegFirstName] = useState('Tom');
-  const [regLastName, setRegLastName] = useState('Cruise');
-  const [regEmail, setRegEmail] = useState('admin@redvision.com');
-  const [regPassword, setRegPassword] = useState('Password123');
+  const [regOrgName, setRegOrgName] = useState('');
+  const [regSubdomain, setRegSubdomain] = useState('');
+  const [regFirstName, setRegFirstName] = useState('');
+  const [regLastName, setRegLastName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPassword, setRegPassword] = useState('');
   const [regOtpDigits, setRegOtpDigits] = useState(['', '', '', '', '', '']);
+
+  // Forgot Password states
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotOtpDigits, setForgotOtpDigits] = useState(['', '', '', '', '', '']);
+  const [forgotNewPassword, setForgotNewPassword] = useState('');
+  const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
+  const [forgotSuccessMsg, setForgotSuccessMsg] = useState('');
 
   useEffect(() => {
     let timer;
@@ -340,6 +347,89 @@ const Login = () => {
     }
   };
 
+  const handleSendForgotOtp = async (e) => {
+    if (e) e.preventDefault();
+    setLoading(true); setError(''); setForgotSuccessMsg('');
+    try {
+      const res = await api.post('/auth/forgot-password', { email: forgotEmail, subdomain });
+      if (res.data.success) {
+        setCountdown(60);
+        setForgotOtpDigits(['', '', '', '', '', '']);
+        setStep(8);
+      }
+    } catch (err) {
+      setError(err.response?.data?.error?.message || 'Failed to send verification code');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendForgotOtp = async () => {
+    if (countdown > 0) return;
+    setLoading(true); setError(''); setForgotSuccessMsg('');
+    try {
+      const res = await api.post('/auth/forgot-password', { email: forgotEmail, subdomain });
+      if (res.data.success) {
+        setCountdown(60);
+        setForgotOtpDigits(['', '', '', '', '', '']);
+      }
+    } catch (err) {
+      setError(err.response?.data?.error?.message || 'Resend failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyForgotOtpAndReset = async (e) => {
+    if (e) e.preventDefault();
+    if (forgotNewPassword !== forgotConfirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    if (forgotNewPassword.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+    const otpCode = forgotOtpDigits.join('');
+    if (otpCode.length !== 6) {
+      setError('Please enter a 6-digit verification code');
+      return;
+    }
+    setLoading(true); setError('');
+    try {
+      const res = await api.post('/auth/reset-password', {
+        email: forgotEmail,
+        subdomain,
+        otpCode,
+        password: forgotNewPassword
+      });
+      if (res.data.success) {
+        setForgotSuccessMsg('Password reset successful! You can now log in with your new password.');
+        setEmail(forgotEmail);
+        setForgotNewPassword('');
+        setForgotConfirmPassword('');
+        setStep(2);
+      }
+    } catch (err) {
+      setError(err.response?.data?.error?.message || 'Password reset failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotOtpDigitChange = (i, v) => {
+    if (!/^\d*$/.test(v)) return;
+    const d = [...forgotOtpDigits]; d[i] = v.slice(-1); setForgotOtpDigits(d);
+    if (v && i < 5) document.getElementById(`forgot-otp-${i + 1}`)?.focus();
+  };
+
+  const handleForgotOtpKeyDown = (i, e) => {
+    if (e.key === 'Backspace' && !forgotOtpDigits[i] && i > 0) {
+      document.getElementById(`forgot-otp-${i - 1}`)?.focus();
+      const d = [...forgotOtpDigits]; d[i - 1] = ''; setForgotOtpDigits(d);
+    }
+  };
+
   return (
     <AuthLayout>
       {/* Header */}
@@ -350,6 +440,8 @@ const Login = () => {
            step === 3 ? `${ssoProvider === 'google' ? 'Google' : 'Microsoft'} Sign-In` :
            step === 5 ? 'Register organization' :
            step === 6 ? 'Verify registration' :
+           step === 7 ? 'Forgot Password' :
+           step === 8 ? 'Reset Password' :
            'Verify Code'}
         </h2>
         <p className="text-[11px] font-normal leading-relaxed" style={{ color: 'rgba(232,244,248,0.35)' }}>
@@ -358,6 +450,8 @@ const Login = () => {
            step === 3 ? 'Enter your registered email address.' :
            step === 5 ? 'Set up a new workspace and HR administrator account.' :
            step === 6 ? `Enter the 6-digit code sent to ${regEmail}.` :
+           step === 7 ? 'Enter your email to receive a password reset verification code.' :
+           step === 8 ? `Enter the 6-digit code sent to ${forgotEmail} and set your new password.` :
            `Enter the 6-digit code sent to ${ssoEmail}.`}
         </p>
       </div>
@@ -373,6 +467,12 @@ const Login = () => {
         <div className="flex gap-2 p-3 rounded-lg text-[10.5px] font-medium text-left animate-fade-in" style={{ background: 'rgba(255,45,85,0.08)', border: '1px solid rgba(255,45,85,0.2)', color: '#FF2D55' }}>
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
           <span>{error}</span>
+        </div>
+      )}
+      {forgotSuccessMsg && (
+        <div className="flex gap-2 p-3 rounded-lg text-[10.5px] font-medium text-left animate-fade-in" style={{ background: 'rgba(0,245,212,0.08)', border: '1px solid rgba(0,245,212,0.2)', color: '#00F5D4' }}>
+          <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
+          <span>{forgotSuccessMsg}</span>
         </div>
       )}
 
@@ -411,7 +511,7 @@ const Login = () => {
           <div className="space-y-1.5">
             <div className="flex justify-between items-center">
               <label className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(232,244,248,0.3)' }}>Password</label>
-              <button type="button" onClick={() => alert('Default: Password123')} className="text-[9px] font-bold transition-colors" style={{ color: '#00F5D4' }}>
+              <button type="button" onClick={() => { setError(''); setForgotEmail(email); setForgotSuccessMsg(''); setStep(7); }} className="text-[9px] font-bold transition-colors hover:text-[#00F5D4]" style={{ color: '#00F5D4' }}>
                 Forgot?
               </button>
             </div>
@@ -596,6 +696,93 @@ const Login = () => {
             <button type="button" onClick={handleResendRegisterOtp} disabled={loading}
               style={{ color: '#00F5D4' }}>
               Resend Code
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Step 7: Forgot Password - Request OTP */}
+      {step === 7 && (
+        <form onSubmit={handleSendForgotOtp} className="space-y-5 text-left animate-fade-in">
+          <div className="space-y-1.5">
+            <label className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(232,244,248,0.3)' }}>Email Address</label>
+            <NeonInput
+              type="email"
+              placeholder="you@company.com"
+              value={forgotEmail}
+              onChange={(e) => setForgotEmail(e.target.value)}
+              disabled={loading}
+              required
+            />
+          </div>
+
+          <LiquidButton type="submit" disabled={loading}>
+            {loading ? 'Sending Code...' : 'Send Verification Code'} <ArrowRight className="h-3.5 w-3.5" />
+          </LiquidButton>
+
+          <button type="button" onClick={() => { setError(''); setStep(2); }} className="w-full text-center text-[10px] font-bold mt-3 flex items-center justify-center gap-1 transition-colors hover:text-[#00F5D4]" style={{ color: 'rgba(232,244,248,0.2)' }}>
+            <ArrowLeft className="h-3 w-3" /> Back to sign in
+          </button>
+        </form>
+      )}
+
+      {/* Step 8: Forgot Password - Verify OTP & Set New Password */}
+      {step === 8 && (
+        <form onSubmit={handleVerifyForgotOtpAndReset} className="space-y-5 text-left animate-fade-in">
+          <div className="space-y-4">
+            <label className="text-[9px] font-bold uppercase tracking-[0.2em] block text-center" style={{ color: 'rgba(232,244,248,0.3)' }}>Verification Code</label>
+            <div className="flex justify-center gap-2.5">
+              {forgotOtpDigits.map((d, i) => (
+                <input
+                  key={i} id={`forgot-otp-${i}`} type="text" maxLength="1" value={d}
+                  onChange={(e) => handleForgotOtpDigitChange(i, e.target.value)}
+                  onKeyDown={(e) => handleForgotOtpKeyDown(i, e)}
+                  disabled={loading}
+                  className="w-11 h-13 text-center text-lg font-bold rounded-lg focus:outline-none transition-all duration-300"
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: d ? '1px solid rgba(0,245,212,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                    color: '#E8F4F8',
+                    boxShadow: d ? '0 0 12px rgba(0,245,212,0.1)' : 'none',
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(232,244,248,0.3)' }}>New Password</label>
+            <NeonInput
+              type="password"
+              placeholder="••••••••"
+              value={forgotNewPassword}
+              onChange={(e) => setForgotNewPassword(e.target.value)}
+              disabled={loading}
+              required
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(232,244,248,0.3)' }}>Confirm New Password</label>
+            <NeonInput
+              type="password"
+              placeholder="••••••••"
+              value={forgotConfirmPassword}
+              onChange={(e) => setForgotConfirmPassword(e.target.value)}
+              disabled={loading}
+              required
+            />
+          </div>
+
+          <LiquidButton type="submit" disabled={loading}>
+            {loading ? 'Resetting...' : 'Reset Password'}
+          </LiquidButton>
+
+          <div className="flex justify-between items-center text-[10px] font-bold mt-4">
+            <button type="button" onClick={() => { setError(''); setStep(7); }} style={{ color: 'rgba(232,244,248,0.25)' }}>Change Email</button>
+            <button type="button" onClick={handleResendForgotOtp} disabled={loading || countdown > 0}
+              className="disabled:opacity-40" style={{ color: '#00F5D4' }}>
+              {countdown > 0 ? `Resend in ${countdown}s` : 'Resend Code'}
             </button>
           </div>
         </form>

@@ -115,6 +115,13 @@ export const logout = async (req, res, next) => {
 export const forgotPassword = async (req, res, next) => {
   try {
     const { email, subdomain } = req.body;
+    if (!email || !subdomain) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'BAD_REQUEST', message: 'Email and subdomain are required' }
+      });
+    }
+
     const tenant = await Tenant.findOne({ subdomain: subdomain.toLowerCase() });
     if (!tenant) {
       return res.status(404).json({
@@ -123,38 +130,38 @@ export const forgotPassword = async (req, res, next) => {
       });
     }
 
-    const user = await User.findOne({ email, tenantId: tenant._id });
+    const user = await User.findOne({ email: email.toLowerCase(), tenantId: tenant._id });
     if (!user) {
-      // Don't leak user existence for security. return generic message.
-      return res.status(200).json({
-        success: true,
-        message: 'If the email matches an account, a reset link will be sent.'
+      return res.status(404).json({
+        success: false,
+        error: { code: 'USER_NOT_FOUND', message: 'User not found in this organization' }
       });
     }
 
-    // Mock reset token
-    const resetToken = `reset-mock-${Math.random().toString(36).substring(2, 15)}`;
-    
-    // Log resetting attempt
+    // Generate a 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    user.otpCode = otp;
+    user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    await user.save();
+
     await writeAuditLog({
-      action: 'PASSWORD_RESET_REQUESTED',
+      action: 'PASSWORD_RESET_OTP_SENT',
       tenantId: tenant._id,
       userId: user._id,
       meta: { email }
     });
 
-    // Send mock email
-    const resetLink = `http://${subdomain}.hrms.local:5173/reset-password?token=${resetToken}`;
+    // Send email with OTP
     await sendEmail({
       to: email,
-      subject: 'HRMS Password Reset Request',
-      text: `Hello,\n\nYou requested a password reset. Use this token/link to complete it:\n${resetLink}\n\nIf you did not request this, please ignore this email.`,
-      html: `<h3>Hello,</h3><p>You requested a password reset. Click the link below to complete the action:</p><p><a href="${resetLink}">Reset Password</a></p>`
+      subject: 'HRMS Password Reset Verification Code',
+      text: `Hello,\n\nYou requested a password reset. Your 6-digit verification code is:\n\n${otp}\n\nThis code will expire in 10 minutes. If you did not request this, please ignore this email.`,
+      html: `<h3>Hello,</h3><p>You requested a password reset. Use the following verification code to reset your password:</p><h2 style="font-size: 24px; letter-spacing: 2px; color: #4F46E5;">${otp}</h2><p>This code will expire in 10 minutes.</p>`
     });
 
     res.status(200).json({
       success: true,
-      message: 'Password reset link sent to registered email address'
+      message: 'Verification code sent to registered email address'
     });
   } catch (error) {
     next(error);
@@ -163,21 +170,23 @@ export const forgotPassword = async (req, res, next) => {
 
 export const resetPassword = async (req, res, next) => {
   try {
-    const { token, password } = req.body;
-    
-    // For demonstration, mock matching the reset token to the first user or using token data.
-    // In our case we'll locate a test user or return failure if token is empty
-    if (!token || !token.startsWith('reset-mock-')) {
+    const { email, subdomain, otpCode, password } = req.body;
+    if (!email || !subdomain || !otpCode || !password) {
       return res.status(400).json({
         success: false,
-        error: { code: 'INVALID_RESET_TOKEN', message: 'The reset link is invalid or expired' }
+        error: { code: 'BAD_REQUEST', message: 'Email, subdomain, verification code, and new password are required' }
       });
     }
 
-    // Find the user context (for testing, we find a user by their temp token. We can search in db or simulate)
-    // For completeness, we let the reset password proceed on a mock test user.
-    // In production we would store tokens in the db with expiry.
-    const user = await User.findOne({ isDeleted: false });
+    const tenant = await Tenant.findOne({ subdomain: subdomain.toLowerCase() });
+    if (!tenant) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'TENANT_NOT_FOUND', message: 'Organization subdomain not found' }
+      });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase(), tenantId: tenant._id }).select('+otpCode +otpExpiry');
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -185,7 +194,18 @@ export const resetPassword = async (req, res, next) => {
       });
     }
 
+    // Verify OTP code and check if expired
+    if (!user.otpCode || user.otpCode !== otpCode || !user.otpExpiry || user.otpExpiry < new Date()) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_OTP', message: 'The verification code is invalid or has expired' }
+      });
+    }
+
+    // Update password
     user.password = password;
+    user.otpCode = null;
+    user.otpExpiry = null;
     await user.save();
 
     await writeAuditLog({
