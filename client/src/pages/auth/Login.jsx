@@ -106,21 +106,54 @@ const LiquidButton = ({ children, onClick, disabled, type = 'submit' }) => {
 };
 
 /* ─── Neon Input Wrapper ─── */
-const NeonInput = ({ icon: Icon, ...props }) => (
-  <div className="relative group">
-    <div className="relative flex items-center h-12 bg-white/[0.03] border-b border-white/10 group-focus-within:border-transparent transition-all duration-300">
-      {Icon && <Icon className="absolute left-0 h-4 w-4 text-white/25 group-focus-within:text-[#00F5D4] transition-colors duration-300" />}
-      <input
-        {...props}
-        className={`w-full h-full ${Icon ? 'pl-7' : 'pl-0'} pr-3 text-xs bg-transparent text-[#E8F4F8] font-medium placeholder:text-white/20 focus:outline-none`}
+const NeonInput = ({ icon: Icon, ...props }) => {
+  const [focused, setFocused] = useState(false);
+
+  const baseStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    height: '3rem',
+    paddingLeft: Icon ? '1.75rem' : '0.5rem',
+    paddingRight: '0.75rem',
+    borderRadius: '0.5rem',
+    background: 'linear-gradient(135deg, rgba(255,255,255,0.015) 0%, rgba(123,47,190,0.02) 100%)',
+    border: '1px solid rgba(255,255,255,0.06)',
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)',
+    transition: 'box-shadow 240ms ease, border-color 240ms ease, transform 120ms ease',
+  };
+
+  const focusStyle = {
+    border: '1px solid rgba(0,245,212,0.6)',
+    boxShadow: '0 8px 30px rgba(123,47,190,0.06), 0 2px 8px rgba(0,245,212,0.06) inset',
+  };
+
+  return (
+    <div className="relative group">
+      <div
+        className="relative"
+        style={{ ...(baseStyle), ...(focused ? focusStyle : {}) }}
+      >
+        {Icon && <Icon className="absolute left-3 h-4 w-4 text-white/30" style={{ top: '50%', transform: 'translateY(-50%)' }} />}
+        <input
+          {...props}
+          onFocus={(e) => { setFocused(true); props.onFocus && props.onFocus(e); }}
+          onBlur={(e) => { setFocused(false); props.onBlur && props.onBlur(e); }}
+          className={`w-full h-full text-xs bg-transparent text-[#E8F4F8] font-medium placeholder:text-white/30 caret-[#00F5D4] focus:outline-none` + (Icon ? ' pl-7' : ' pl-2')}
+          style={{ WebkitFontSmoothing: 'antialiased' }}
+        />
+      </div>
+
+      {/* Neon underline */}
+      <div
+        className="absolute bottom-0 left-0 h-[2px] transition-all duration-300 ease-out"
+        style={{
+          width: focused ? '100%' : '0%',
+          background: 'linear-gradient(90deg, #00F5D4, #7B2FBE)'
+        }}
       />
     </div>
-    {/* Neon underline */}
-    <div className="absolute bottom-0 left-0 h-[1.5px] w-0 group-focus-within:w-full transition-all duration-500 ease-out"
-      style={{ background: 'linear-gradient(90deg, #00F5D4, #7B2FBE)' }}
-    />
-  </div>
-);
+  );
+};
 
 const Login = () => {
   const navigate = useNavigate();
