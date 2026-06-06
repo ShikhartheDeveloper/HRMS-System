@@ -26,6 +26,14 @@ const LeaveManager = () => {
   const [reason, setReason] = useState('');
   const [formError, setFormError] = useState('');
 
+  const resetLeaveForm = () => {
+    setLeaveType('Casual');
+    setStartDate('');
+    setEndDate('');
+    setReason('');
+    setFormError('');
+  };
+
   const fetchLeaveData = async () => {
     setLoading(true);
     try {
@@ -52,11 +60,7 @@ const LeaveManager = () => {
   }, [user]);
 
   const handleOpenApply = () => {
-    setLeaveType('Casual');
-    setStartDate('');
-    setEndDate('');
-    setReason('');
-    setFormError('');
+    resetLeaveForm();
     setShowApplyModal(true);
   };
 
@@ -69,11 +73,12 @@ const LeaveManager = () => {
         leaveType,
         startDate,
         endDate,
-        reason
+        reason: reason.trim()
       });
 
       if (res.data.success) {
         setShowApplyModal(false);
+        resetLeaveForm();
         fetchLeaveData();
         setFeedback('Leave application submitted successfully!');
         setTimeout(() => setFeedback(''), 3000);
@@ -250,7 +255,7 @@ const LeaveManager = () => {
                   <select
                     value={leaveType}
                     onChange={(e) => setLeaveType(e.target.value)}
-                    className="w-full h-10 px-3 border border-borderColor rounded-input text-xs focus:outline-none focus:border-primary bg-transparent"
+                    className="w-full h-10 px-3 border border-borderColor rounded-input text-xs text-textPrimary bg-surface/80 placeholder:text-textSecondary focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
                   >
                     <option value="Casual">Casual Leave</option>
                     <option value="Sick">Sick Leave</option>
@@ -267,7 +272,7 @@ const LeaveManager = () => {
                       required
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full h-10 px-3 border border-borderColor rounded-input text-xs focus:outline-none focus:border-primary"
+                      className="w-full h-10 px-3 border border-borderColor rounded-input text-xs text-textPrimary bg-surface/80 placeholder:text-textSecondary focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
                     />
                   </div>
                   <div className="space-y-1">
@@ -277,7 +282,7 @@ const LeaveManager = () => {
                       required
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
-                      className="w-full h-10 px-3 border border-borderColor rounded-input text-xs focus:outline-none focus:border-primary"
+                      className="w-full h-10 px-3 border border-borderColor rounded-input text-xs text-textPrimary bg-surface/80 placeholder:text-textSecondary focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
                     />
                   </div>
                 </div>
@@ -290,7 +295,7 @@ const LeaveManager = () => {
                     placeholder="Provide details about your request..."
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    className="w-full p-3 border border-borderColor rounded-input text-xs focus:outline-none focus:border-primary"
+                    className="w-full p-3 border border-borderColor rounded-input text-xs text-textPrimary bg-surface/80 placeholder:text-textSecondary focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
                   ></textarea>
                 </div>
 

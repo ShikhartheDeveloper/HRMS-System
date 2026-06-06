@@ -113,22 +113,25 @@ const NeonInput = ({ icon: Icon, ...props }) => {
     display: 'flex',
     alignItems: 'center',
     height: '3rem',
-    paddingLeft: Icon ? '1.75rem' : '0.5rem',
-    paddingRight: '0.75rem',
-    borderRadius: '0.5rem',
-    background: 'linear-gradient(135deg, rgba(255,255,255,0.015) 0%, rgba(123,47,190,0.02) 100%)',
-    border: '1px solid rgba(255,255,255,0.06)',
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)',
-    transition: 'box-shadow 240ms ease, border-color 240ms ease, transform 120ms ease',
+    paddingLeft: Icon ? '2rem' : '1rem',
+    paddingRight: '1rem',
+    borderRadius: '1rem',
+    background: 'rgba(8, 12, 22, 0.98)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.04)',
+    transition: 'box-shadow 240ms ease, border-color 240ms ease, transform 180ms ease',
+    backdropFilter: 'blur(16px)',
+    overflow: 'hidden'
   };
 
   const focusStyle = {
-    border: '1px solid rgba(0,245,212,0.6)',
-    boxShadow: '0 8px 30px rgba(123,47,190,0.06), 0 2px 8px rgba(0,245,212,0.06) inset',
+    border: '1px solid rgba(144, 163, 255, 0.8)',
+    boxShadow: '0 0 0 4px rgba(144, 163, 255, 0.14), inset 0 0 0 1px rgba(255,255,255,0.06)',
+    transform: 'translateY(-1px)'
   };
 
   return (
-    <div className="relative group">
+    <div className="relative group neon-input">
       <div
         className="relative"
         style={{ ...(baseStyle), ...(focused ? focusStyle : {}) }}
@@ -138,8 +141,18 @@ const NeonInput = ({ icon: Icon, ...props }) => {
           {...props}
           onFocus={(e) => { setFocused(true); props.onFocus && props.onFocus(e); }}
           onBlur={(e) => { setFocused(false); props.onBlur && props.onBlur(e); }}
-          className={`w-full h-full text-xs bg-transparent text-[#E8F4F8] font-medium placeholder:text-white/30 caret-[#00F5D4] focus:outline-none` + (Icon ? ' pl-7' : ' pl-2')}
-          style={{ WebkitFontSmoothing: 'antialiased' }}
+          className={`w-full h-full text-xs text-[#E8F4F8] font-medium bg-transparent placeholder:text-white/30 caret-[#00F5D4] focus:outline-none` + (Icon ? ' pl-7' : ' pl-2')}
+          style={{
+            WebkitFontSmoothing: 'antialiased',
+            backgroundColor: 'transparent',
+            border: 'none',
+            outline: 'none',
+            color: '#E8F4F8',
+            boxShadow: 'none',
+            WebkitAppearance: 'none',
+            MozAppearance: 'none',
+            appearance: 'none'
+          }}
         />
       </div>
 
