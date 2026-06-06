@@ -17,6 +17,8 @@ const envVarsSchema = Joi.object({
   SMTP_PORT: Joi.number().description('SMTP server port'),
   SMTP_USER: Joi.string().description('SMTP server username'),
   SMTP_PASS: Joi.string().description('SMTP server password'),
+  EMAIL_USER: Joi.string().description('Fallback SMTP username (Render compat)'),
+  EMAIL_PASS: Joi.string().description('Fallback SMTP password (Render compat)'),
   FROM_EMAIL: Joi.string().email({ tlds: { allow: false } }).default('no-reply@hrms.local'),
   AWS_ACCESS_KEY_ID: Joi.string().allow('').default(''),
   AWS_SECRET_ACCESS_KEY: Joi.string().allow('').default(''),
@@ -45,14 +47,14 @@ export const env = {
   },
   email: {
     smtp: {
-      host: envVars.SMTP_HOST,
-      port: envVars.SMTP_PORT,
+      host: envVars.SMTP_HOST || 'smtp.gmail.com',
+      port: envVars.SMTP_PORT || 587,
       auth: {
-        user: envVars.SMTP_USER,
-        pass: envVars.SMTP_PASS
+        user: envVars.SMTP_USER || envVars.EMAIL_USER,
+        pass: envVars.SMTP_PASS || envVars.EMAIL_PASS
       }
     },
-    from: envVars.FROM_EMAIL
+    from: envVars.FROM_EMAIL || envVars.SMTP_USER || envVars.EMAIL_USER || 'no-reply@hrms.local'
   },
   aws: {
     accessKeyId: envVars.AWS_ACCESS_KEY_ID,

@@ -5,6 +5,7 @@ import { sendEmail } from './sendEmail.js';
 
 /**
  * Send in-app notification + email to every registered user in a tenant.
+ * Emails are dispatched concurrently for speed.
  */
 export const notifyAllTenantUsers = async ({
   tenantId,
@@ -14,23 +15,24 @@ export const notifyAllTenantUsers = async ({
   emailSubject,
   buildEmail
 }) => {
-  const users = await User.find({ tenantId, isDeleted: { $ne: true } })
-    .select('_id email')
-    .lean();
+  // Fetch users and employees in parallel
+  const [users, employees] = await Promise.all([
+    User.find({ tenantId, isDeleted: { $ne: true } })
+      .select('_id email')
+      .lean(),
+    Employee.find({ tenantId })
+      .select('userId email firstName lastName')
+      .lean()
+  ]);
 
   if (users.length === 0) {
     return { usersNotified: 0, emailsSent: 0, emailsFailed: 0 };
   }
 
-  const employees = await Employee.find({ tenantId })
-    .select('userId email firstName lastName')
-    .lean();
   const employeeByUserId = new Map(employees.map((emp) => [emp.userId.toString(), emp]));
 
+  // ── In-app notifications (bulk insert) ──
   let usersNotified = 0;
-  let emailsSent = 0;
-  let emailsFailed = 0;
-
   try {
     const notificationDocs = users.map((user) => ({
       tenantId,
@@ -44,21 +46,20 @@ export const notifyAllTenantUsers = async ({
     const inserted = await Notification.insertMany(notificationDocs, { ordered: false });
     usersNotified = inserted.length;
   } catch (err) {
-    // Partial success when some docs fail
     if (err.insertedDocs?.length) {
       usersNotified = err.insertedDocs.length;
     }
     console.error('In-app notification broadcast error:', err.message);
   }
 
-  await Promise.all(
+  // ── Emails (concurrent dispatch) ──
+  const emailResults = await Promise.allSettled(
     users.map(async (user) => {
       const employee = employeeByUserId.get(user._id.toString());
       const recipientEmail = employee?.email || user.email;
 
       if (!recipientEmail) {
-        emailsFailed += 1;
-        return;
+        throw new Error('no-email');
       }
 
       const firstName = employee?.firstName || user.email?.split('@')[0] || 'Team Member';
@@ -77,13 +78,13 @@ export const notifyAllTenantUsers = async ({
         html: emailPayload.html
       });
 
-      if (result) {
-        emailsSent += 1;
-      } else {
-        emailsFailed += 1;
-      }
+      if (!result) throw new Error('send-failed');
+      return result;
     })
   );
+
+  const emailsSent = emailResults.filter((r) => r.status === 'fulfilled').length;
+  const emailsFailed = emailResults.filter((r) => r.status === 'rejected').length;
 
   return { usersNotified, emailsSent, emailsFailed, totalUsers: users.length };
 };

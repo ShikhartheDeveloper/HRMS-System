@@ -237,7 +237,10 @@ export const sendEmployeeEmail = async (req, res, next) => {
     if (!emailSent) {
       return res.status(500).json({
         success: false,
-        error: { code: 'EMAIL_SEND_FAILED', message: 'Failed to send email message via SMTP transporter' }
+        error: {
+          code: 'EMAIL_SEND_FAILED',
+          message: 'Email delivery failed. Please verify SMTP credentials are configured correctly in the server environment.'
+        }
       });
     }
 
