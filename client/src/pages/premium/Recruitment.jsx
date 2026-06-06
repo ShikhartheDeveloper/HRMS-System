@@ -32,6 +32,15 @@ const Recruitment = () => {
   const [candEmail, setCandEmail] = useState('');
   const [candJob, setCandJob] = useState('');
 
+  const resolveJobImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+
+    const apiBase = api.defaults.baseURL || '';
+    const host = apiBase.replace(/\/api\/?$/, '');
+    return `${host}${url}`;
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -314,18 +323,21 @@ const Recruitment = () => {
             {jobs.length === 0 ? (
               <p className="text-textSecondary py-4 col-span-3 text-center">No jobs created yet.</p>
             ) : (
-              jobs.map((job) => (
-                <div key={job._id} className="border border-borderColor rounded-card overflow-hidden hover:shadow-card transition-all duration-150 space-y-2">
-                  {job.imageUrl && (
-                    <div className="h-36 w-full bg-background overflow-hidden">
-                      <img
-                        src={job.imageUrl}
-                        alt={job.title}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                  )}
-                  <div className="p-4 space-y-2">
+              jobs.map((job) => {
+                const imageUrl = resolveJobImageUrl(job.imageUrl);
+                return (
+                  <div key={job._id} className="border border-borderColor rounded-card overflow-hidden hover:shadow-card transition-all duration-150 space-y-2">
+                    {imageUrl && (
+                      <div className="h-36 w-full bg-background overflow-hidden">
+                        <img
+                          src={imageUrl}
+                          alt={job.title}
+                          className="h-full w-full object-cover"
+                          onError={(e) => { e.currentTarget.src = ''; e.currentTarget.style.display = 'none'; }}
+                        />
+                      </div>
+                    )}
+                    <div className="p-4 space-y-2">
                     <div className="flex justify-between items-start">
                       <h4 className="font-bold text-[13px]">{job.title}</h4>
                       <span className="px-2 py-0.5 text-[9px] font-bold uppercase rounded-full bg-success/15 text-success">{job.status}</span>
