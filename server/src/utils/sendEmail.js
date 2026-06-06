@@ -80,6 +80,40 @@ const getTransporter = async () => {
  * @returns {Promise<Object|null>} nodemailer info object, or null on failure
  */
 export const sendEmail = async ({ to, subject, text, html }) => {
+  // ── Try Resend HTTP API first if configured (bypasses Render SMTP port block) ──
+  if (env.email.resendApiKey) {
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${env.email.resendApiKey}`
+        },
+        body: JSON.stringify({
+          from: env.email.from,
+          to: Array.isArray(to) ? to : [to],
+          subject,
+          text,
+          html
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`📧 Email sent via Resend API to ${to} — messageId: ${data.id}`);
+        return { messageId: data.id };
+      } else {
+        const errText = await response.text();
+        console.error(`Resend API failed with status ${response.status}:`, errText);
+        // Fall back to SMTP if Resend fails
+      }
+    } catch (apiErr) {
+      console.error('Resend API dispatch error, falling back to SMTP:', apiErr.message);
+      // Fall back to SMTP if Resend fails
+    }
+  }
+
+  // ── SMTP fallback ──
   try {
     const mailTransporter = await getTransporter();
     const info = await mailTransporter.sendMail({

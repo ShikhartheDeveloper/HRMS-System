@@ -12,6 +12,8 @@ export const createEmployee = async (employeeData, tenantId, creatorId) => {
 
   try {
     const { email, password, role, ...profileDetails } = employeeData;
+    const finalPassword = password || 'Password123';
+    const finalRole = role || 'EMPLOYEE';
 
     // Check if email already exists
     const existingUser = await User.findOne({ email, tenantId }).session(session);
@@ -22,8 +24,8 @@ export const createEmployee = async (employeeData, tenantId, creatorId) => {
     // Create User record
     const newUser = await User.create([{
       email,
-      password,
-      role,
+      password: finalPassword,
+      role: finalRole,
       tenantId
     }], { session });
 
@@ -34,7 +36,7 @@ export const createEmployee = async (employeeData, tenantId, creatorId) => {
     const newEmployee = await Employee.create([{
       ...profileDetails,
       email,
-      role,
+      role: finalRole,
       employeeId,
       userId: newUser[0]._id,
       tenantId

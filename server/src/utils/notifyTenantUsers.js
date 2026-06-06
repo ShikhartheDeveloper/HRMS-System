@@ -29,7 +29,13 @@ export const notifyAllTenantUsers = async ({
     return { usersNotified: 0, emailsSent: 0, emailsFailed: 0 };
   }
 
-  const employeeByUserId = new Map(employees.map((emp) => [emp.userId.toString(), emp]));
+  // Safe mapping to prevent crashes if emp.userId is null/undefined in some records
+  const employeeByUserId = new Map();
+  for (const emp of employees) {
+    if (emp && emp.userId) {
+      employeeByUserId.set(emp.userId.toString(), emp);
+    }
+  }
 
   // ── In-app notifications (bulk insert) ──
   let usersNotified = 0;
