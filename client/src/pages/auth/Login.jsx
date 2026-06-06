@@ -141,12 +141,12 @@ const Login = () => {
   const [countdown, setCountdown] = useState(0);
 
   // Registration states
-  const [regOrgName, setRegOrgName] = useState('');
-  const [regSubdomain, setRegSubdomain] = useState('');
-  const [regFirstName, setRegFirstName] = useState('');
-  const [regLastName, setRegLastName] = useState('');
-  const [regEmail, setRegEmail] = useState('');
-  const [regPassword, setRegPassword] = useState('');
+  const [regOrgName, setRegOrgName] = useState('Redvision');
+  const [regSubdomain, setRegSubdomain] = useState('redvision');
+  const [regFirstName, setRegFirstName] = useState('Tom');
+  const [regLastName, setRegLastName] = useState('Cruise');
+  const [regEmail, setRegEmail] = useState('admin@redvision.com');
+  const [regPassword, setRegPassword] = useState('Password123');
   const [regOtpDigits, setRegOtpDigits] = useState(['', '', '', '', '', '']);
 
   useEffect(() => {
@@ -521,12 +521,12 @@ const Login = () => {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(232,244,248,0.3)' }}>Company Name</label>
-              <NeonInput type="text" placeholder="e.g. Acme Corp" value={regOrgName} onChange={(e) => setRegOrgName(e.target.value)} disabled={loading} required />
+              <NeonInput type="text" placeholder="e.g. Redvision" value={regOrgName} onChange={(e) => setRegOrgName(e.target.value)} disabled={loading} required />
             </div>
             <div className="space-y-1">
               <label className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(232,244,248,0.3)' }}>Subdomain</label>
               <div className="relative flex items-center">
-                <NeonInput type="text" placeholder="acme" value={regSubdomain} onChange={(e) => setRegSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} disabled={loading} required />
+                <NeonInput type="text" placeholder="redvision" value={regSubdomain} onChange={(e) => setRegSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} disabled={loading} required />
                 <span className="absolute right-0 text-[8px] font-extrabold tracking-wider" style={{ color: 'rgba(0,245,212,0.35)' }}>.hrms</span>
               </div>
             </div>
@@ -535,17 +535,17 @@ const Login = () => {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(232,244,248,0.3)' }}>Admin First Name</label>
-              <NeonInput type="text" placeholder="John" value={regFirstName} onChange={(e) => setRegFirstName(e.target.value)} disabled={loading} required />
+              <NeonInput type="text" placeholder="Tom" value={regFirstName} onChange={(e) => setRegFirstName(e.target.value)} disabled={loading} required />
             </div>
             <div className="space-y-1">
               <label className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(232,244,248,0.3)' }}>Admin Last Name</label>
-              <NeonInput type="text" placeholder="Doe" value={regLastName} onChange={(e) => setRegLastName(e.target.value)} disabled={loading} required />
+              <NeonInput type="text" placeholder="Cruise" value={regLastName} onChange={(e) => setRegLastName(e.target.value)} disabled={loading} required />
             </div>
           </div>
 
           <div className="space-y-1">
             <label className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(232,244,248,0.3)' }}>Admin Email</label>
-            <NeonInput type="email" placeholder="admin@acme.com" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} disabled={loading} required />
+            <NeonInput type="email" placeholder="admin@redvision.com" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} disabled={loading} required />
           </div>
 
           <div className="space-y-1">
