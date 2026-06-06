@@ -132,6 +132,12 @@ export const punchOut = async (userId, gps, tenantId) => {
     record.overtimeHours = parseFloat((hoursWorked - fullDayHours).toFixed(2));
   }
 
+  // Calculate if early clock out
+  const shiftStart = new Date(record.punchIn);
+  shiftStart.setHours(9, 0, 0, 0);
+  const shiftEnd = new Date(shiftStart.getTime() + (fullDayHours * 60 * 60 * 1000));
+  record.isEarlyOut = now < shiftEnd;
+
   await record.save();
 
   await writeAuditLog({
@@ -250,6 +256,11 @@ export const reviewRegularization = async (attendanceId, reviewDetails, tenantId
       if (hoursWorked > fullDayHours) {
         record.overtimeHours = parseFloat((hoursWorked - fullDayHours).toFixed(2));
       }
+      
+      const shiftStart = new Date(record.punchIn);
+      shiftStart.setHours(9, 0, 0, 0);
+      const shiftEnd = new Date(shiftStart.getTime() + (fullDayHours * 60 * 60 * 1000));
+      record.isEarlyOut = record.punchOut < shiftEnd;
     }
   }
 

@@ -266,7 +266,14 @@ const AttendanceRecords = () => {
                           {r.punchIn ? new Date(r.punchIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'}
                         </td>
                         <td className="px-6 py-2 text-textSecondary">
-                          {r.punchOut ? new Date(r.punchOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'}
+                          {r.punchOut ? (
+                            <div className="flex flex-col text-left">
+                              <span>{new Date(r.punchOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                              {r.isEarlyOut && (
+                                <span className="text-[10px] text-danger font-semibold uppercase tracking-wider mt-0.5">Before Time</span>
+                              )}
+                            </div>
+                          ) : '--'}
                         </td>
                         <td className="px-6 py-2">
                           <span
@@ -342,7 +349,15 @@ const AttendanceRecords = () => {
                           {new Date(r.date).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-2 text-textSecondary">
-                          In: {r.punchIn ? new Date(r.punchIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'} | Out: {r.punchOut ? new Date(r.punchOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'}
+                          <div>
+                            In: {r.punchIn ? new Date(r.punchIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'}
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            Out: {r.punchOut ? new Date(r.punchOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'}
+                            {r.isEarlyOut && (
+                              <span className="px-1.5 py-0.5 bg-danger/10 text-danger rounded text-[9px] font-bold uppercase tracking-wider">Before Time</span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-2">
                           {r.regularization?.status === 'Pending' ? (

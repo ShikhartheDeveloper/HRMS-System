@@ -305,6 +305,25 @@ export const submitReview = async (req, res, next) => {
 // ==========================================
 // 3. RECRUITMENT SECTION
 // ==========================================
+export const getPublicJobs = async (req, res, next) => {
+  try {
+    const jobs = await Job.find({ tenantId: req.tenantId, status: 'Open' })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const jobsWithImages = await Promise.all(
+      jobs.map(async (job) => ({
+        ...job,
+        imageUrl: await resolveJobImageUrl(job.imageUrl)
+      }))
+    );
+
+    res.status(200).json({ success: true, data: jobsWithImages });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const getJobs = async (req, res, next) => {
   try {
     const jobs = await Job.find({ tenantId: req.tenantId })

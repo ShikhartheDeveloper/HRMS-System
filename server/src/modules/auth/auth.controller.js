@@ -241,11 +241,11 @@ export const ssoGoogle = async (req, res, next) => {
   try {
     const { subdomain } = req.query;
     if (!subdomain) {
-      return res.redirect('http://localhost:5173/login?error=subdomain_missing');
+      return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=subdomain_missing`);
     }
     const tenant = await Tenant.findOne({ subdomain: subdomain.toLowerCase() });
     if (!tenant) {
-      return res.redirect('http://localhost:5173/login?error=tenant_not_found');
+      return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=tenant_not_found`);
     }
 
     // Find first active user in this tenant to act as the SSO logged-in user
@@ -269,9 +269,9 @@ export const ssoGoogle = async (req, res, next) => {
     res.cookie('refreshToken', refreshToken, cookieOptions);
 
     // Redirect to client application with accessToken
-    res.redirect(`http://localhost:5173/login?token=${accessToken}`);
+    res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?token=${accessToken}`);
   } catch (error) {
-    res.redirect('http://localhost:5173/login?error=sso_failed');
+    res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=sso_failed`);
   }
 };
 

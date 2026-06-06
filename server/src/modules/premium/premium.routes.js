@@ -5,7 +5,36 @@ import { authorize } from '../../middleware/authorize.js';
 import { uploadImage, uploadDocument } from '../../middleware/uploadMiddleware.js';
 import * as premiumController from './premium.controller.js';
 
+import Tenant from '../../models/Tenant.model.js';
+
 const router = express.Router();
+
+// Public recruitment routes (No Auth required)
+const publicTenantScope = async (req, res, next) => {
+  try {
+    const subdomain = req.query.subdomain || req.headers['x-tenant-subdomain'];
+    if (!subdomain) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'SUBDOMAIN_REQUIRED', message: 'Subdomain parameter is required' }
+      });
+    }
+    const tenant = await Tenant.findOne({ subdomain: subdomain.toLowerCase() });
+    if (!tenant) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'TENANT_NOT_FOUND', message: `No organization found for subdomain '${subdomain}'` }
+      });
+    }
+    req.tenantId = tenant._id;
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+router.get('/public/recruitment/jobs', publicTenantScope, premiumController.getPublicJobs);
+router.post('/public/recruitment/candidates', publicTenantScope, premiumController.createCandidate);
 
 router.use(authenticate);
 router.use(tenantScope);

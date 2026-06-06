@@ -66,7 +66,7 @@ export const createEmployee = async (employeeData, tenantId, creatorId) => {
             <p style="color: #475569; font-size: 14px; line-height: 1.6; margin: 0 0 20px 0;">We are thrilled to welcome you. An account has been set up for you in the company directory. You can log in using the details below:</p>
             
             <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 20px;">
-              <p style="margin: 0 0 8px 0; font-size: 14px; color: #475569;"><strong>Portal URL:</strong> <a href="http://localhost:5173" style="color: #4f46e5; font-weight: bold; text-decoration: none;">http://localhost:5173</a></p>
+              <p style="margin: 0 0 8px 0; font-size: 14px; color: #475569;"><strong>Portal URL:</strong> <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}" style="color: #4f46e5; font-weight: bold; text-decoration: none;">${process.env.CLIENT_URL || 'http://localhost:5173'}</a></p>
               <p style="margin: 0 0 8px 0; font-size: 14px; color: #475569;"><strong>Subdomain:</strong> Use your workspace subdomain</p>
               <p style="margin: 0 0 8px 0; font-size: 14px; color: #475569;"><strong>Email Address:</strong> ${email}</p>
               <p style="margin: 0; font-size: 14px; color: #475569;"><strong>Password:</strong> ${password}</p>

@@ -27,6 +27,7 @@ import Training from '../pages/premium/Training';
 import Assets from '../pages/premium/Assets';
 import Tickets from '../pages/premium/Tickets';
 import AIAdvisory from '../pages/premium/AIAdvisory';
+import PublicJobs from '../pages/premium/PublicJobs';
 
 const AppRouter = () => {
   return (
@@ -34,6 +35,7 @@ const AppRouter = () => {
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
+        <Route path="/jobs/:subdomain" element={<PublicJobs />} />
 
         {/* Protected Routes — shared layout stays mounted while navigating */}
         <Route element={<PrivateRoute />}>

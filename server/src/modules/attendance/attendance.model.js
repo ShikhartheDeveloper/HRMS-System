@@ -56,6 +56,10 @@ const attendanceSchema = new mongoose.Schema(
       type: Number,
       default: 0
     },
+    isEarlyOut: {
+      type: Boolean,
+      default: false
+    },
     isDeleted: {
       type: Boolean,
       default: false

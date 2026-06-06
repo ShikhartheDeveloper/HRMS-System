@@ -222,8 +222,9 @@ const processExportJob = async (jobId, type, tenantId) => {
     await fs.promises.writeFile(filePath, csvContent);
 
     // Update status to Completed and point to file download url
-    // In dev, client is at port 5173, backend at 5000. So we point URL to backend port static file
-    const resultUrl = `http://localhost:5000/exports/${fileName}`;
+    // Point URL to backend static file — uses SERVER_BASE_URL in production
+    const serverBase = process.env.SERVER_BASE_URL || 'http://localhost:5000';
+    const resultUrl = `${serverBase}/exports/${fileName}`;
     await ReportJob.findByIdAndUpdate(jobId, { status: 'Completed', resultUrl });
   } catch (err) {
     console.error('Report export error:', err);
