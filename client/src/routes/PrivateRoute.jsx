@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import api from '../services/api';
 
 const PrivateRoute = ({ children }) => {
-  const { isAuthenticated, isInitialized, setAuth, clearAuth, setInitialized, profileImageUrl, setProfileImageUrl } = useAuthStore();
+  const { isAuthenticated, isInitialized, setAuth, clearAuth, setInitialized, profileImageUrl, setProfileImageUrl, setTenant } = useAuthStore();
   const location = useLocation();
 
   useEffect(() => {
@@ -13,7 +13,10 @@ const PrivateRoute = ({ children }) => {
         try {
           const res = await api.post('/auth/refresh');
           if (res.data.success) {
-            const { user, token } = res.data.data;
+            const { user, token, tenant } = res.data.data;
+            if (tenant) {
+              setTenant(tenant);
+            }
             setAuth(user, token);
             // Fetch profile image if employee ID exists
             if (user?.employee?._id) {
@@ -62,7 +65,7 @@ const PrivateRoute = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  return children;
+  return children ?? <Outlet />;
 };
 
 export default PrivateRoute;

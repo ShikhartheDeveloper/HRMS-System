@@ -9,6 +9,8 @@ export const tenantScope = (req, res, next) => {
     });
   }
 
+  req.tenantId = req.user.tenantId;
+
   // Utility to append tenantId to filter queries
   req.scopeQuery = (filter = {}) => {
     return { ...filter, tenantId: req.user.tenantId };

@@ -1,25 +1,16 @@
-import React from 'react';
-import Sidebar from './Sidebar';
-import Topbar from './Topbar';
+import React, { useEffect } from 'react';
+import { usePageTitle } from './PageTitleContext';
 
 const PageWrapper = ({ children, title }) => {
-  return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background">
-      {/* Sidebar navigation */}
-      <Sidebar />
+  const { setTitle } = usePageTitle();
 
-      {/* Main content body */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        {/* Top bar header */}
-        <Topbar title={title} />
+  useEffect(() => {
+    if (title) {
+      setTitle(title);
+    }
+  }, [title, setTitle]);
 
-        {/* Scrollable page body */}
-        <main className="flex-1 overflow-y-auto p-8 animate-fade-in">
-          {children}
-        </main>
-      </div>
-    </div>
-  );
+  return <div className="animate-fade-in">{children}</div>;
 };
 
 export default PageWrapper;

@@ -4,9 +4,69 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: light;
+  --background: #F8FAFC;
+  --surface: #FFFFFF;
+  --sidebar: #090D1F;
+  --sidebar-text: #8F9CAE;
+  --primary: #4F46E5;
+  --primary-hover: #4338CA;
+  --accent: #0D9488;
+  --accent-hover: #0F766E;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --border-color: #E2E8F0;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #0B0F19;
+  --surface: #151B2C;
+  --sidebar: #0F172A;
+  --sidebar-text: #94A3B8;
+  --primary: #6366F1;
+  --primary-hover: #4F46E5;
+  --accent: #14B8A6;
+  --accent-hover: #0D9488;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --border-color: #1E293B;
+}
+
 @layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+
   body {
-    @apply bg-background text-textPrimary font-sans antialiased;
+    @apply bg-background text-textPrimary font-sans antialiased transition-colors duration-200;
+  }
+
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  textarea,
+  select {
+    @apply bg-background text-textPrimary;
+  }
+
+  select option {
+    background-color: var(--surface);
+    color: var(--text-primary);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--text-secondary);
+    opacity: 1;
   }
 }
 

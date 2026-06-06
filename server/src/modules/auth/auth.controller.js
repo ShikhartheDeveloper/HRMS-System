@@ -51,12 +51,19 @@ export const login = async (req, res, next) => {
 
     res.cookie('refreshToken', refreshToken, cookieOptions);
 
+    const tenant = await Tenant.findById(tenantId).lean();
+
     res.status(200).json({
       success: true,
       message: 'Login successful',
       data: {
         user,
-        token: accessToken
+        token: accessToken,
+        tenant: tenant ? {
+          id: tenant._id.toString(),
+          name: tenant.name,
+          subdomain: tenant.subdomain
+        } : null
       }
     });
   } catch (error) {
@@ -78,11 +85,18 @@ export const refresh = async (req, res, next) => {
 
     res.cookie('refreshToken', newRefreshToken, cookieOptions);
 
+    const tenant = await Tenant.findById(user.tenantId).lean();
+
     res.status(200).json({
       success: true,
       data: {
         user,
-        token: accessToken
+        token: accessToken,
+        tenant: tenant ? {
+          id: tenant._id.toString(),
+          name: tenant.name,
+          subdomain: tenant.subdomain
+        } : null
       }
     });
   } catch (error) {
@@ -371,7 +385,12 @@ export const ssoVerifyOtp = async (req, res, next) => {
       message: 'SSO verification successful',
       data: {
         user: safeUser,
-        token: accessToken
+        token: accessToken,
+        tenant: tenant ? {
+          id: tenant._id.toString(),
+          name: tenant.name,
+          subdomain: tenant.subdomain
+        } : null
       }
     });
   } catch (error) {
@@ -547,7 +566,12 @@ export const registerVerifyOtp = async (req, res, next) => {
       message: 'Organization registered and verified successfully',
       data: {
         user: safeUser,
-        token: accessToken
+        token: accessToken,
+        tenant: {
+          id: tenant._id,
+          name: tenant.name,
+          subdomain: tenant.subdomain
+        }
       }
     });
   } catch (error) {

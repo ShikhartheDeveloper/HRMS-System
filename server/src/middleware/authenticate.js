@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
 import User from '../models/User.model.js';
+import Employee from '../modules/employees/employee.model.js';
 
 export const authenticate = async (req, res, next) => {
   try {
@@ -47,12 +48,17 @@ export const authenticate = async (req, res, next) => {
       });
     }
 
+    const employee = await Employee.findOne({ userId: user._id, tenantId: user.tenantId })
+      .select('_id')
+      .lean();
+
     // Attach to request
     req.user = {
       id: user._id,
       email: user.email,
       role: user.role,
-      tenantId: user.tenantId
+      tenantId: user.tenantId,
+      employeeId: employee?._id || null
     };
 
     next();

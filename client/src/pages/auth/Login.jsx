@@ -168,7 +168,13 @@ const Login = () => {
     if (ssoToken) {
       setLoading(true);
       api.post('/auth/refresh').then((res) => {
-        if (res.data.success) { setAuth(res.data.data.user, ssoToken); navigate('/dashboard'); }
+        if (res.data.success) {
+          if (res.data.data.tenant) {
+            setTenant(res.data.data.tenant);
+          }
+          setAuth(res.data.data.user, ssoToken);
+          navigate('/dashboard');
+        }
       }).catch(() => { /* Silently ignore – no active session cookie yet */ }).finally(() => setLoading(false));
     }
     if (ssoError) setError(ssoError === 'subdomain_missing' ? 'Subdomain missing' : ssoError === 'tenant_not_found' ? 'Tenant not found' : 'SSO failed');
@@ -220,6 +226,9 @@ const Login = () => {
         const sub = regSubdomain.toLowerCase().trim();
         setSubdomain(sub);
         localStorage.setItem('hrms_subdomain', sub);
+        if (res.data.data.tenant) {
+          setTenant(res.data.data.tenant);
+        }
         setAuth(res.data.data.user, res.data.data.token);
         setRegOrgName('');
         setRegSubdomain('');
@@ -289,7 +298,13 @@ const Login = () => {
     setLoading(true); setError(''); setLockoutMsg('');
     try {
       const res = await api.post('/auth/login', { email, password, tenantId: tenant.id });
-      if (res.data.success) { setAuth(res.data.data.user, res.data.data.token); navigate('/dashboard'); }
+      if (res.data.success) {
+        if (res.data.data.tenant) {
+          setTenant(res.data.data.tenant);
+        }
+        setAuth(res.data.data.user, res.data.data.token);
+        navigate('/dashboard');
+      }
     } catch (err) {
       const ed = err.response?.data?.error;
       if (ed?.code === 'ACCOUNT_LOCKED') setLockoutMsg(ed.message);
@@ -320,7 +335,13 @@ const Login = () => {
     setLoading(true); setError('');
     try {
       const res = await api.post('/auth/sso/verify-otp', { email: ssoEmail, otpCode: code, subdomain });
-      if (res.data.success) { setAuth(res.data.data.user, res.data.data.token); navigate('/dashboard'); }
+      if (res.data.success) {
+        if (res.data.data.tenant) {
+          setTenant(res.data.data.tenant);
+        }
+        setAuth(res.data.data.user, res.data.data.token);
+        navigate('/dashboard');
+      }
     } catch (err) { setError(err.response?.data?.error?.message || 'Verification failed'); }
     finally { setLoading(false); }
   };

@@ -280,6 +280,86 @@ const EmployeeList = () => {
     }
   };
 
+  const handleExportCsv = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/employees', {
+        params: { limit: 10000 }
+      });
+      if (res.data.success) {
+        const data = res.data.data;
+        if (data.length === 0) {
+          alert('No employee records found to export');
+          return;
+        }
+
+        // Define CSV headers
+        const headers = [
+          'Employee ID',
+          'First Name',
+          'Last Name',
+          'Email',
+          'Phone',
+          'Department',
+          'Designation',
+          'Role',
+          'Salary',
+          'Manager Name',
+          'Manager ID',
+          'Status',
+          'Date of Joining'
+        ];
+
+        // Map rows
+        const csvRows = [
+          headers.join(','), // header row
+          ...data.map(emp => {
+            const managerName = emp.managerId
+              ? `"${emp.managerId.firstName || ''} ${emp.managerId.lastName || ''}"`
+              : '""';
+            const managerId = emp.managerId
+              ? `"${emp.managerId.employeeId || ''}"`
+              : '""';
+
+            return [
+              `"${emp.employeeId || ''}"`,
+              `"${emp.firstName || ''}"`,
+              `"${emp.lastName || ''}"`,
+              `"${emp.email || ''}"`,
+              `"${emp.phone || ''}"`,
+              `"${emp.department || ''}"`,
+              `"${emp.designation || ''}"`,
+              `"${emp.role || ''}"`,
+              emp.salary !== undefined ? emp.salary : '""',
+              managerName,
+              managerId,
+              `"${emp.status || ''}"`,
+              emp.dateOfJoining ? `"${new Date(emp.dateOfJoining).toLocaleDateString()}"` : '""'
+            ].join(',');
+          })
+        ];
+
+        const csvContent = csvRows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `employees_export_${new Date().toISOString().slice(0, 10)}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setFeedback('Employee CSV exported successfully!');
+        setTimeout(() => setFeedback(''), 3000);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to export employee CSV data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <PageWrapper title="Employee Directory">
       <div className="space-y-6 text-left animate-fade-in">
@@ -320,24 +400,34 @@ const EmployeeList = () => {
           </div>
 
           {/* Action Buttons */}
-          {user?.role !== 'LEADERSHIP' && (
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setShowImportModal(true)}
-                className="h-10 px-4 border border-borderColor hover:bg-background text-textPrimary rounded-button text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors"
-              >
-                <Upload className="h-4 w-4 text-textSecondary" />
-                Bulk Import
-              </button>
-              <button
-                onClick={handleOpenAdd}
-                className="h-10 px-4 bg-primary hover:bg-primary-hover text-white rounded-button text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors shadow-sm"
-              >
-                <Plus className="h-4 w-4" />
-                Add Employee
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleExportCsv}
+              className="h-10 px-4 border border-borderColor hover:bg-background text-textPrimary rounded-button text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+            >
+              <Download className="h-4 w-4 text-textSecondary" />
+              Export CSV
+            </button>
+
+            {user?.role !== 'LEADERSHIP' && (
+              <>
+                <button
+                  onClick={() => setShowImportModal(true)}
+                  className="h-10 px-4 border border-borderColor hover:bg-background text-textPrimary rounded-button text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <Upload className="h-4 w-4 text-textSecondary" />
+                  Bulk Import
+                </button>
+                <button
+                  onClick={handleOpenAdd}
+                  className="h-10 px-4 bg-primary hover:bg-primary-hover text-white rounded-button text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors shadow-sm"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Employee
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Directory Table */}

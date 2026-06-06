@@ -157,6 +157,20 @@ const Reports = () => {
           </div>
         )}
 
+        {/* Global Export Header */}
+        <div className="flex justify-between items-center bg-surface border border-borderColor rounded-card p-6 shadow-custom flex-wrap gap-4 hover:shadow-glow hover:border-primary/10 transition-all duration-200">
+          <div>
+            <h2 className="text-[14px] font-bold uppercase tracking-wider text-textPrimary">Reports & Export Control Portal</h2>
+            <p className="text-[12px] text-textSecondary mt-0.5">Download structured data sheets and audits for payroll, attendance, leave, and complete workforce directories.</p>
+          </div>
+          <button
+            onClick={() => handleExport('headcount')}
+            className="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-[13px] font-semibold rounded-button flex items-center gap-1.5 shadow-sm transition-all duration-150 cursor-pointer"
+          >
+            <Download className="h-4 w-4" /> Download Complete Employee Roster
+          </button>
+        </div>
+
         {/* Headcount Overview */}
         <div className="space-y-4">
           <h2 className="text-sm font-bold text-textPrimary uppercase tracking-wider flex items-center gap-2">

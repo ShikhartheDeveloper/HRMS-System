@@ -13,6 +13,8 @@ import leaveRoutes from './modules/leave/leave.routes.js';
 import reportRoutes from './modules/reports/report.routes.js';
 import notificationRoutes from './modules/notifications/notification.routes.js';
 import uploadRoutes from './modules/uploads/upload.routes.js';
+import premiumRoutes from './modules/premium/premium.routes.js';
+import aiRoutes from './modules/ai/ai.routes.js';
 
 import path from 'path';
 
@@ -20,6 +22,7 @@ const app = express();
 
 // Serve static export files
 app.use('/exports', express.static(path.join(process.cwd(), 'public', 'exports')));
+app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
 
 // Security Middlewares
 app.use(helmet());
@@ -52,6 +55,8 @@ app.use('/api/leave', leaveRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/premium', premiumRoutes);
+app.use('/api/ai', aiRoutes);
 
 // 404 Route handler for API routes
 app.use('/api', (req, res) => {

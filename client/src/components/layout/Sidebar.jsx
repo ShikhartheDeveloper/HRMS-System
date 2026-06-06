@@ -13,11 +13,19 @@ import {
   Settings,
   ShieldCheck,
   LogOut,
-  FolderOpen
+  FolderOpen,
+  Coins,
+  Target,
+  Briefcase,
+  CheckSquare,
+  CreditCard,
+  Laptop,
+  LifeBuoy,
+  Sparkles
 } from 'lucide-react';
 
 const Sidebar = () => {
-  const { user, clearAuth, profileImageUrl } = useAuthStore();
+  const { user, clearAuth, profileImageUrl, tenant } = useAuthStore();
   const location = useLocation();
 
   const handleLogout = () => {
@@ -52,7 +60,21 @@ const Sidebar = () => {
       label: 'REPORTS & CONFIG',
       items: [
         { name: 'Reports', path: '/reports', icon: BarChart3, roles: ['HR_ADMIN', 'LEADERSHIP'] },
+        { name: 'AI Advisory', path: '/ai-advisory', icon: Sparkles, roles: ['HR_ADMIN', 'LEADERSHIP'] },
         { name: 'Settings', path: '/settings', icon: Settings, roles: ['HR_ADMIN'] }
+      ]
+    },
+    {
+      label: 'PREMIUM MODULES',
+      items: [
+        { name: 'Payroll & Compliance', path: '/payroll', icon: Coins, roles: ['EMPLOYEE', 'MANAGER', 'HR_ADMIN', 'LEADERSHIP'] },
+        { name: 'Performance', path: '/performance', icon: Target, roles: ['EMPLOYEE', 'MANAGER', 'HR_ADMIN', 'LEADERSHIP'] },
+        { name: 'Recruitment', path: '/recruitment', icon: Briefcase, roles: ['EMPLOYEE', 'MANAGER', 'HR_ADMIN', 'LEADERSHIP'] },
+        { name: 'Onboarding & Docs', path: '/onboarding', icon: CheckSquare, roles: ['EMPLOYEE', 'MANAGER', 'HR_ADMIN', 'LEADERSHIP'] },
+        { name: 'Expenses', path: '/expenses', icon: CreditCard, roles: ['EMPLOYEE', 'MANAGER', 'HR_ADMIN', 'LEADERSHIP'] },
+        { name: 'L&D Training', path: '/training', icon: BookOpen, roles: ['EMPLOYEE', 'MANAGER', 'HR_ADMIN', 'LEADERSHIP'] },
+        { name: 'Assets Tracker', path: '/assets', icon: Laptop, roles: ['EMPLOYEE', 'MANAGER', 'HR_ADMIN', 'LEADERSHIP'] },
+        { name: 'Helpdesk Tickets', path: '/tickets', icon: LifeBuoy, roles: ['EMPLOYEE', 'MANAGER', 'HR_ADMIN', 'LEADERSHIP'] }
       ]
     }
   ];
@@ -65,12 +87,12 @@ const Sidebar = () => {
     .filter(group => group.items.length > 0);
 
   return (
-    <aside className="w-60 bg-sidebar text-sidebarText h-screen flex flex-col justify-between select-none transition-all duration-200">
-      <div className="flex flex-col flex-1 overflow-y-auto">
+    <aside className="w-60 shrink-0 bg-sidebar text-sidebarText h-screen flex flex-col justify-between select-none transition-all duration-200 sticky top-0 left-0 z-30">
+      <div className="flex flex-col flex-1 min-h-0 overflow-y-auto overscroll-contain">
         {/* Logo and Tagline */}
-        <div className="h-16 flex flex-col justify-center px-6 border-b border-gray-800">
-          <span className="font-semibold text-lg text-white tracking-wide">HRMS SaaS</span>
-          <span className="text-[10px] text-gray-500 font-medium tracking-wider uppercase">Default Org</span>
+        <div className="h-16 shrink-0 flex flex-col justify-center px-6 border-b border-gray-800 sticky top-0 z-10 bg-sidebar">
+          <span className="font-semibold text-lg text-white tracking-wide">HRMS Elite</span>
+          <span className="text-[10px] text-gray-500 font-medium tracking-wider uppercase">{tenant?.name || 'Organization'}</span>
         </div>
 
         {/* Navigation Groups */}
@@ -108,7 +130,7 @@ const Sidebar = () => {
       </div>
 
       {/* Footer / Logout */}
-      <div className="p-4 border-t border-gray-800 flex flex-col gap-3">
+      <div className="shrink-0 p-4 border-t border-gray-800 flex flex-col gap-3 bg-sidebar">
         <div className="flex items-center gap-3 px-2">
           {profileImageUrl ? (
             <img

@@ -1,17 +1,21 @@
 import fs from 'fs';
 import path from 'path';
+import mongoose from 'mongoose';
 import Employee from '../employees/employee.model.js';
 import Attendance from '../attendance/attendance.model.js';
 import Leave from '../leave/leave.model.js';
 import ReportJob from './report.model.js';
+import Payroll from '../premium/payroll.model.js';
 
 export const getHeadcountStats = async (tenantId) => {
   const activeCount = await Employee.countDocuments({ tenantId, status: 'Active' });
   const terminatedCount = await Employee.countDocuments({ tenantId, status: 'Terminated' });
 
+  const tId = typeof tenantId === 'string' ? new mongoose.Types.ObjectId(tenantId) : tenantId;
+
   // Breakdown by department
   const deptBreakdown = await Employee.aggregate([
-    { $match: { tenantId, status: 'Active', isDeleted: { $ne: true } } },
+    { $match: { tenantId: tId, status: 'Active', isDeleted: { $ne: true } } },
     { $group: { _id: '$department', count: { $sum: 1 } } },
     { $project: { department: '$_id', count: 1, _id: 0 } }
   ]);
@@ -67,10 +71,12 @@ export const getLeaveUsage = async (tenantId) => {
   const start = new Date(currentYear, 0, 1);
   const end = new Date(currentYear, 11, 31, 23, 59, 59, 999);
 
+  const tId = typeof tenantId === 'string' ? new mongoose.Types.ObjectId(tenantId) : tenantId;
+
   const leaveCounts = await Leave.aggregate([
     {
       $match: {
-        tenantId,
+        tenantId: tId,
         status: 'Approved',
         startDate: { $gte: start },
         endDate: { $lte: end },
@@ -85,15 +91,51 @@ export const getLeaveUsage = async (tenantId) => {
 };
 
 export const getSalaryFlowStats = async (tenantId) => {
-  const employees = await Employee.find({ tenantId, status: 'Active', isDeleted: { $ne: true } }).lean();
-  const totalSalary = employees.reduce((sum, emp) => sum + (emp.salary || 0), 0);
-  const averageSalary = employees.length > 0 ? parseFloat((totalSalary / employees.length).toFixed(2)) : 0;
+  const tId = typeof tenantId === 'string' ? new mongoose.Types.ObjectId(tenantId) : tenantId;
 
-  const deptSalaryBreakdown = await Employee.aggregate([
-    { $match: { tenantId, status: 'Active', isDeleted: { $ne: true } } },
-    { $group: { _id: '$department', totalSalary: { $sum: '$salary' }, count: { $sum: 1 } } },
-    { $project: { department: '$_id', totalSalary: 1, count: 1, _id: 0 } }
-  ]);
+  // Aggregate paid or processed payroll runs to reflect actual salary flow
+  const payrollCount = await Payroll.countDocuments({ tenantId });
+
+  let totalSalary = 0;
+  let averageSalary = 0;
+  let deptSalaryBreakdown = [];
+
+  if (payrollCount > 0) {
+    const payrolls = await Payroll.find({ tenantId }).populate('employeeId').lean();
+    totalSalary = payrolls.reduce((sum, p) => sum + (p.netSalary || 0), 0);
+    averageSalary = payrolls.length > 0 ? parseFloat((totalSalary / payrolls.length).toFixed(2)) : 0;
+
+    const deptMap = {};
+    payrolls.forEach(p => {
+      if (p.employeeId) {
+        const dept = p.employeeId.department || 'Other';
+        if (!deptMap[dept]) {
+          deptMap[dept] = { totalSalary: 0, count: 0 };
+        }
+        deptMap[dept].totalSalary += (p.netSalary || 0);
+        deptMap[dept].count += 1;
+      }
+    });
+
+    deptSalaryBreakdown = Object.keys(deptMap).map(dept => ({
+      department: dept,
+      totalSalary: deptMap[dept].totalSalary,
+      count: deptMap[dept].count
+    }));
+  } else {
+    // Fallback: active employee contract salary CTC
+    const employees = await Employee.find({ tenantId, status: 'Active', isDeleted: { $ne: true } }).lean();
+    totalSalary = employees.reduce((sum, emp) => sum + (emp.salary || 0), 0);
+    averageSalary = employees.length > 0 ? parseFloat((totalSalary / employees.length).toFixed(2)) : 0;
+
+    const deptBreakdown = await Employee.aggregate([
+      { $match: { tenantId: tId, status: 'Active', isDeleted: { $ne: true } } },
+      { $group: { _id: '$department', totalSalary: { $sum: '$salary' }, count: { $sum: 1 } } },
+      { $project: { department: '$_id', totalSalary: 1, count: 1, _id: 0 } }
+    ]);
+
+    deptSalaryBreakdown = deptBreakdown;
+  }
 
   return {
     totalSalary,
@@ -130,10 +172,12 @@ const processExportJob = async (jobId, type, tenantId) => {
     const filePath = path.join(exportsDir, fileName);
 
     if (type === 'headcount') {
-      const employees = await Employee.find({ tenantId }).lean();
-      csvContent = 'Employee ID,First Name,Last Name,Email,Department,Designation,Status,Date of Joining\n';
+      const employees = await Employee.find({ tenantId }).populate('managerId', 'firstName lastName employeeId').lean();
+      csvContent = 'Employee ID,First Name,Last Name,Email,Phone,Date of Birth,Gender,Department,Designation,Role Level,Date of Joining,Manager Name,Manager Employee ID,Status,Salary,Created At\n';
       employees.forEach(e => {
-        csvContent += `"${e.employeeId}","${e.firstName}","${e.lastName}","${e.email}","${e.department}","${e.designation}","${e.status}","${e.dateOfJoining ? new Date(e.dateOfJoining).toLocaleDateString() : ''}"\n`;
+        const mgrName = e.managerId ? `${e.managerId.firstName} ${e.managerId.lastName}` : 'N/A';
+        const mgrEmpId = e.managerId ? e.managerId.employeeId : 'N/A';
+        csvContent += `"${e.employeeId}","${e.firstName}","${e.lastName}","${e.email}","${e.phone || ''}","${e.dateOfBirth ? new Date(e.dateOfBirth).toLocaleDateString() : ''}","${e.gender || ''}","${e.department}","${e.designation}","${e.role}","${e.dateOfJoining ? new Date(e.dateOfJoining).toLocaleDateString() : ''}","${mgrName}","${mgrEmpId}","${e.status}",${e.salary || 0},"${new Date(e.createdAt).toLocaleDateString()}"\n`;
       });
     } else if (type === 'attendance-summary') {
       const records = await Attendance.find({ tenantId }).populate('employeeId').lean();
@@ -158,11 +202,21 @@ const processExportJob = async (jobId, type, tenantId) => {
         csvContent += `"${e.employeeId}","${e.firstName} ${e.lastName}","${e.email}","${e.department}","${e.designation}","${e.dateOfJoining ? new Date(e.dateOfJoining).toLocaleDateString() : ''}"\n`;
       });
     } else if (type === 'salary-flow') {
-      const employees = await Employee.find({ tenantId, status: 'Active' }).lean();
-      csvContent = 'Employee ID,First Name,Last Name,Department,Designation,Salary\n';
-      employees.forEach(e => {
-        csvContent += `"${e.employeeId}","${e.firstName}","${e.lastName}","${e.department}","${e.designation}",${e.salary || 0}\n`;
-      });
+      const payrollCount = await Payroll.countDocuments({ tenantId });
+      if (payrollCount > 0) {
+        const payrolls = await Payroll.find({ tenantId }).populate('employeeId').lean();
+        csvContent = 'Month,Employee ID,First Name,Last Name,Department,Designation,Base Salary,Net Salary,Status\n';
+        payrolls.forEach(p => {
+          const emp = p.employeeId || {};
+          csvContent += `"${p.month}","${emp.employeeId || 'N/A'}","${emp.firstName || ''}","${emp.lastName || ''}","${emp.department || ''}","${emp.designation || ''}",${p.baseSalary},${p.netSalary},"${p.status}"\n`;
+        });
+      } else {
+        const employees = await Employee.find({ tenantId, status: 'Active' }).lean();
+        csvContent = 'Employee ID,First Name,Last Name,Department,Designation,Contract Salary\n';
+        employees.forEach(e => {
+          csvContent += `"${e.employeeId}","${e.firstName}","${e.lastName}","${e.department}","${e.designation}",${e.salary || 0}\n`;
+        });
+      }
     }
 
     await fs.promises.writeFile(filePath, csvContent);

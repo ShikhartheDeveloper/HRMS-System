@@ -2,12 +2,26 @@ import React, { useEffect, useState } from 'react';
 import useAuthStore from '../../store/authStore';
 import useNotificationStore from '../../store/notificationStore';
 import api from '../../services/api';
-import { Bell, ChevronDown } from 'lucide-react';
+import { Bell, ChevronDown, Sun, Moon } from 'lucide-react';
 
 const Topbar = ({ title }) => {
   const { user, profileImageUrl } = useAuthStore();
   const { notifications, unreadCount, setNotifications, markAsRead } = useNotificationStore();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+  };
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -22,7 +36,7 @@ const Topbar = ({ title }) => {
     };
     
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 15000);
+    const interval = setInterval(fetchNotifications, 8000);
     return () => clearInterval(interval);
   }, [setNotifications]);
 
@@ -36,7 +50,7 @@ const Topbar = ({ title }) => {
   };
 
   return (
-    <header className="h-16 border-b border-borderColor bg-surface flex items-center justify-between px-8 select-none z-10">
+    <header className="h-16 shrink-0 sticky top-0 z-20 border-b border-borderColor bg-surface flex items-center justify-between px-8 select-none">
       {/* Title */}
       <h1 className="font-semibold text-lg text-textPrimary tracking-tight">
         {title || 'Dashboard'}
@@ -44,6 +58,21 @@ const Topbar = ({ title }) => {
 
       {/* Actions */}
       <div className="flex items-center gap-6">
+        {/* Theme Toggle Button */}
+        <button
+          onClick={toggleTheme}
+          className="p-[2px] rounded-full bg-gradient-to-tr from-primary to-accent hover:scale-105 active:scale-95 transition-all duration-200 shadow-sm"
+          title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
+        >
+          <div className="p-1.5 bg-surface rounded-full flex items-center justify-center text-textSecondary hover:text-textPrimary transition-colors duration-150">
+            {theme === 'light' ? (
+              <Moon className="h-4.5 w-4.5 text-primary" />
+            ) : (
+              <Sun className="h-4.5 w-4.5 text-warning animate-pulse-slow" />
+            )}
+          </div>
+        </button>
+
         {/* Notification Bell */}
         <div className="relative">
           <button
