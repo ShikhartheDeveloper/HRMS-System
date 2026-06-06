@@ -11,7 +11,7 @@ import {
   Download,
   CheckCircle,
   Loader2,
-  DollarSign
+  IndianRupee
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -407,17 +407,17 @@ const Reports = () => {
         {salaryFlow && (
           <div className="space-y-4">
             <h2 className="text-sm font-bold text-textPrimary uppercase tracking-wider flex items-center gap-2 border-t border-borderColor/55 pt-6">
-              <DollarSign className="h-4.5 w-4.5 text-primary" />
+              <IndianRupee className="h-4.5 w-4.5 text-primary" />
               Salary & Workforce Cost Insights
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="bg-surface p-5 rounded-card border border-borderColor shadow-custom hover:shadow-glow hover:border-primary/15 transition-all duration-200">
                 <span className="text-[11px] font-semibold text-textSecondary uppercase tracking-wider block mb-1">Total Payroll Flow (Sum)</span>
-                <span className="text-3xl font-extrabold text-textPrimary">${salaryFlow.totalSalary?.toLocaleString()} / yr</span>
+                <span className="text-3xl font-extrabold text-textPrimary">₹{salaryFlow.totalSalary?.toLocaleString()} / yr</span>
               </div>
               <div className="bg-surface p-5 rounded-card border border-borderColor shadow-custom hover:shadow-glow hover:border-primary/15 transition-all duration-200">
                 <span className="text-[11px] font-semibold text-textSecondary uppercase tracking-wider block mb-1">Average Salary Flow</span>
-                <span className="text-3xl font-extrabold text-primary">${salaryFlow.averageSalary?.toLocaleString()} / yr</span>
+                <span className="text-3xl font-extrabold text-primary">₹{salaryFlow.averageSalary?.toLocaleString()} / yr</span>
               </div>
             </div>
 
@@ -432,8 +432,8 @@ const Reports = () => {
                       <BarChart data={salaryFlow.departmentSalaryDistribution.map(item => ({ name: item.department, salary: item.totalSalary }))} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                         <XAxis dataKey="name" tick={{ fill: '#64748B', fontSize: 11 }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fill: '#64748B', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(val) => `$${val.toLocaleString()}`} />
-                        <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Total Payroll']} contentStyle={{ background: '#0F172A', borderRadius: '10px', color: '#fff', fontSize: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                        <YAxis tick={{ fill: '#64748B', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(val) => `₹${val.toLocaleString()}`} />
+                        <Tooltip formatter={(value) => [`₹${value.toLocaleString()}`, 'Total Payroll']} contentStyle={{ background: '#0F172A', borderRadius: '10px', color: '#fff', fontSize: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
                         <Bar dataKey="salary" fill="#4F46E5" radius={[4, 4, 0, 0]} barSize={28}>
                           {salaryFlow.departmentSalaryDistribution.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -459,7 +459,7 @@ const Reports = () => {
                         <tr key={idx} className="hover:bg-background/40 transition-colors">
                           <td className="px-5 py-3.5 font-bold text-textPrimary">{item.department}</td>
                           <td className="px-5 py-3.5 text-textSecondary">{item.count}</td>
-                          <td className="px-5 py-3.5 font-extrabold text-primary">${item.totalSalary?.toLocaleString()}</td>
+                          <td className="px-5 py-3.5 font-extrabold text-primary">₹{item.totalSalary?.toLocaleString()}</td>
                         </tr>
                       ))}
                     </tbody>

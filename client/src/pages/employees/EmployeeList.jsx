@@ -694,7 +694,7 @@ const EmployeeList = () => {
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-textSecondary uppercase tracking-wider">Annual Salary ($)</label>
+                    <label className="text-[11px] font-semibold text-textSecondary uppercase tracking-wider">Annual Salary (₹)</label>
                     <input
                       type="number"
                       value={formFields.salary}
@@ -846,7 +846,7 @@ const EmployeeList = () => {
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-textSecondary uppercase tracking-wider">Annual Salary ($)</label>
+                    <label className="text-[11px] font-semibold text-textSecondary uppercase tracking-wider">Annual Salary (₹)</label>
                     <input
                       type="number"
                       value={formFields.salary}
@@ -1099,7 +1099,7 @@ const EmployeeList = () => {
                     <div className="space-y-1">
                       <span className="text-[10px] font-bold text-textSecondary uppercase tracking-wider block">Annual Salary</span>
                       <span className="text-textPrimary font-bold text-success">
-                        ${selectedEmpForDetail.salary?.toLocaleString() || '0'}
+                        ₹{selectedEmpForDetail.salary?.toLocaleString() || '0'}
                       </span>
                     </div>
                   )}
