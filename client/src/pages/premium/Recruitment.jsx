@@ -34,7 +34,8 @@ const Recruitment = () => {
 
   const resolveJobImageUrl = (url) => {
     if (!url) return null;
-    if (url.startsWith('http')) return url;
+    // Data URIs and full URLs are already resolved
+    if (url.startsWith('data:') || url.startsWith('http')) return url;
 
     const apiBase = api.defaults.baseURL || '';
     const host = apiBase.replace(/\/api\/?$/, '');
@@ -142,7 +143,9 @@ const Recruitment = () => {
       formData.append('description', jobDesc);
       formData.append('image', jobImage);
 
-      const res = await api.post('/premium/recruitment/jobs', formData);
+      const res = await api.post('/premium/recruitment/jobs', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
 
       if (res.data.success) {
         closeJobModal();

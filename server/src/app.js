@@ -25,7 +25,19 @@ app.use('/exports', express.static(path.join(process.cwd(), 'public', 'exports')
 app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
 
 // Security Middlewares
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      imgSrc: ["'self'", 'data:', 'blob:', 'https:', 'http:'],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https:'],
+      fontSrc: ["'self'", 'https:', 'data:'],
+      connectSrc: ["'self'", 'https:', 'http:']
+    }
+  }
+}));
 
 // CORS config - whitelist credentials
 app.use(cors({
