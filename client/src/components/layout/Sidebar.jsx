@@ -21,10 +21,11 @@ import {
   CreditCard,
   Laptop,
   LifeBuoy,
-  Sparkles
+  Sparkles,
+  X
 } from 'lucide-react';
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, onClose }) => {
   const { user, clearAuth, profileImageUrl, tenant } = useAuthStore();
   const location = useLocation();
 
@@ -87,11 +88,18 @@ const Sidebar = () => {
     .filter(group => group.items.length > 0);
 
   return (
-    <aside className="w-60 shrink-0 bg-sidebar text-sidebarText h-screen flex flex-col justify-between select-none transition-all duration-200 sticky top-0 left-0 z-30">
+    <aside className={`w-60 shrink-0 bg-sidebar text-sidebarText h-screen flex flex-col justify-between select-none transition-all duration-300 fixed md:sticky top-0 left-0 z-30 ${
+      isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+    }`}>
       <div className="flex flex-col flex-1 min-h-0 overflow-y-auto overscroll-contain">
         {/* Logo and Tagline */}
         <div className="h-16 shrink-0 flex flex-col justify-center px-6 border-b border-gray-800 sticky top-0 z-10 bg-sidebar">
-          <span className="font-semibold text-lg text-white tracking-wide">HRMS Elite</span>
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-lg text-white tracking-wide">HRMS Elite</span>
+            <button onClick={onClose} className="md:hidden text-gray-400 hover:text-white p-1 cursor-pointer">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
           <span className="text-[10px] text-gray-500 font-medium tracking-wider uppercase">{tenant?.name || 'Organization'}</span>
         </div>
 

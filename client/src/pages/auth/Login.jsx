@@ -106,16 +106,16 @@ const LiquidButton = ({ children, onClick, disabled, type = 'submit' }) => {
 };
 
 /* ─── Neon Input Wrapper ─── */
-const NeonInput = ({ icon: Icon, ...props }) => {
+const NeonInput = ({ icon: Icon, suffix, ...props }) => {
   const [focused, setFocused] = useState(false);
 
   const baseStyle = {
     display: 'flex',
     alignItems: 'center',
     height: '3rem',
-    paddingLeft: Icon ? '2rem' : '1rem',
-    paddingRight: '1rem',
-    borderRadius: '1rem',
+    paddingLeft: Icon ? '2rem' : '1.5rem',
+    paddingRight: suffix ? '5.5rem' : '1.5rem',
+    borderRadius: '1.25rem',
     background: 'rgba(8, 12, 22, 0.98)',
     border: '1px solid rgba(255,255,255,0.08)',
     boxShadow: '0 20px 40px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.04)',
@@ -131,17 +131,17 @@ const NeonInput = ({ icon: Icon, ...props }) => {
   };
 
   return (
-    <div className="relative group neon-input">
+    <div className="relative group neon-input w-full">
       <div
-        className="relative"
+        className="relative w-full"
         style={{ ...(baseStyle), ...(focused ? focusStyle : {}) }}
       >
-        {Icon && <Icon className="absolute left-3 h-4 w-4 text-white/30" style={{ top: '50%', transform: 'translateY(-50%)' }} />}
+        {Icon && <Icon className="absolute left-4 h-4 w-4 text-white/30" style={{ top: '50%', transform: 'translateY(-50%)' }} />}
         <input
           {...props}
           onFocus={(e) => { setFocused(true); props.onFocus && props.onFocus(e); }}
           onBlur={(e) => { setFocused(false); props.onBlur && props.onBlur(e); }}
-          className={`w-full h-full text-xs text-[#E8F4F8] font-medium bg-transparent placeholder:text-white/30 caret-[#00F5D4] focus:outline-none` + (Icon ? ' pl-7' : ' pl-2')}
+          className={`w-full h-full text-xs text-[#E8F4F8] font-medium bg-transparent placeholder:text-white/30 caret-[#00F5D4] focus:outline-none` + (Icon ? ' pl-6' : ' pl-1') + (suffix ? ' pr-16' : '')}
           style={{
             WebkitFontSmoothing: 'antialiased',
             backgroundColor: 'transparent',
@@ -154,6 +154,14 @@ const NeonInput = ({ icon: Icon, ...props }) => {
             appearance: 'none'
           }}
         />
+        {suffix && (
+          <span 
+            className="absolute right-4 text-[9px] font-extrabold tracking-wider pointer-events-none select-none"
+            style={{ top: '50%', transform: 'translateY(-50%)', color: 'rgba(0,245,212,0.45)' }}
+          >
+            {suffix}
+          </span>
+        )}
       </div>
 
       {/* Neon underline */}
@@ -545,18 +553,18 @@ const Login = () => {
 
       {/* Step 1: Subdomain */}
       {step === 1 && (
-        <form onSubmit={handleLookupSubdomain} className="space-y-6 text-left animate-fade-in">
-          <div className="space-y-1.5">
+        <form onSubmit={handleLookupSubdomain} className="space-y-6 text-left animate-fade-in w-full">
+          <div className="space-y-1.5 w-full">
             <label className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(232,244,248,0.3)' }}>Workspace</label>
-            <div className="relative flex items-center">
+            <div className="relative flex items-center w-full">
               <NeonInput
                 type="text"
                 placeholder="your-company"
                 value={subdomain}
                 onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/\s+/g, ''))}
                 disabled={loading}
+                suffix=".hrms.local"
               />
-              <span className="absolute right-0 text-[9px] font-extrabold tracking-wider" style={{ color: 'rgba(0,245,212,0.35)' }}>.hrms.local</span>
             </div>
           </div>
           <LiquidButton type="submit" disabled={loading}>
@@ -693,9 +701,16 @@ const Login = () => {
             </div>
             <div className="space-y-1">
               <label className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(232,244,248,0.3)' }}>Subdomain</label>
-              <div className="relative flex items-center">
-                <NeonInput type="text" placeholder="redvision" value={regSubdomain} onChange={(e) => setRegSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} disabled={loading} required />
-                <span className="absolute right-0 text-[8px] font-extrabold tracking-wider" style={{ color: 'rgba(0,245,212,0.35)' }}>.hrms</span>
+              <div className="relative flex items-center w-full">
+                <NeonInput
+                  type="text"
+                  placeholder="redvision"
+                  value={regSubdomain}
+                  onChange={(e) => setRegSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                  disabled={loading}
+                  required
+                  suffix=".hrms"
+                />
               </div>
             </div>
           </div>

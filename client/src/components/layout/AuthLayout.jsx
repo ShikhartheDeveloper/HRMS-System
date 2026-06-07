@@ -69,6 +69,13 @@ const AuthLayout = ({ children }) => {
   const containerRef = useRef(null);
   const mouseRef = useRef({ x: 0, y: 0 });
   const [ready, setReady] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 100);
@@ -411,7 +418,7 @@ const AuthLayout = ({ children }) => {
       </div>
 
       {/* ── Hero Typography ── */}
-      <div className="absolute z-20 pointer-events-none select-none"
+      <div className="absolute z-20 pointer-events-none select-none hidden lg:block"
         style={{ top: '12%', left: '8%' }}
       >
         {/* Line 1: YOUR PEOPLE. */}
@@ -460,16 +467,18 @@ const AuthLayout = ({ children }) => {
       </div>
 
       {/* ── Workspace Entry Card ── */}
-      <div className="absolute z-30 flex items-center justify-center"
+      <div className="absolute z-30 flex items-center justify-center p-4 w-full md:w-auto"
         style={{
-          right: 'clamp(4%, 8vw, 12%)',
+          right: isMobile ? 'auto' : 'clamp(4%, 8vw, 12%)',
+          left: isMobile ? '50%' : 'auto',
           top: '50%',
-          transform: 'translateY(-50%)',
+          transform: isMobile ? 'translate(-50%, -50%)' : 'translateY(-50%)',
           opacity: ready ? 1 : 0,
           transition: 'opacity 0.8s ease 0.5s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s',
+          maxWidth: '90vw'
         }}
       >
-        <div className="relative w-[420px] rounded-[20px] overflow-visible"
+        <div className="relative w-full md:w-[420px] rounded-[20px] overflow-visible"
           style={{
             background: 'rgba(255,255,255,0.025)',
             backdropFilter: 'blur(24px)',
@@ -477,10 +486,14 @@ const AuthLayout = ({ children }) => {
           }}
         >
           {/* Traveling light border */}
-          <TravelingBorder width={420} height={500} />
+          {!isMobile ? (
+            <TravelingBorder width={420} height={500} />
+          ) : (
+            <div className="absolute inset-0 rounded-[20px] border border-white/10 pointer-events-none" />
+          )}
 
           {/* Card content */}
-          <div className="relative z-10 p-10 space-y-6">
+          <div className="relative z-10 p-6 md:p-10 space-y-6">
             {children}
           </div>
         </div>

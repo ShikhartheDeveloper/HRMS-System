@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
@@ -29,9 +29,11 @@ const AppLayoutContent = () => {
   const { title, setTitle } = usePageTitle();
   const location = useLocation();
   const mainRef = useRef(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     setTitle(ROUTE_TITLES[location.pathname] || 'Dashboard');
+    setSidebarOpen(false); // Close drawer when navigating
   }, [location.pathname, setTitle]);
 
   useEffect(() => {
@@ -41,15 +43,23 @@ const AppLayoutContent = () => {
   }, [location.pathname]);
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background">
-      <Sidebar />
+    <div className="flex h-screen w-screen overflow-hidden bg-background relative">
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      {/* Backdrop overlay for mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-20 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        <Topbar title={title} />
+        <Topbar title={title} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
         <main
           ref={mainRef}
-          className="flex-1 overflow-y-auto overflow-x-hidden p-8"
+          className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8"
         >
           <Outlet />
         </main>

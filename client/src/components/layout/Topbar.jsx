@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import useAuthStore from '../../store/authStore';
 import useNotificationStore from '../../store/notificationStore';
 import api from '../../services/api';
-import { Bell, ChevronDown, Sun, Moon } from 'lucide-react';
+import { Bell, ChevronDown, Sun, Moon, Menu } from 'lucide-react';
 
-const Topbar = ({ title }) => {
+const Topbar = ({ title, onToggleSidebar }) => {
   const { user, profileImageUrl } = useAuthStore();
   const { notifications, unreadCount, setNotifications, markAsRead } = useNotificationStore();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -50,11 +50,22 @@ const Topbar = ({ title }) => {
   };
 
   return (
-    <header className="h-16 shrink-0 sticky top-0 z-20 border-b border-borderColor bg-surface flex items-center justify-between px-8 select-none">
-      {/* Title */}
-      <h1 className="font-semibold text-lg text-textPrimary tracking-tight">
-        {title || 'Dashboard'}
-      </h1>
+    <header className="h-16 shrink-0 sticky top-0 z-20 border-b border-borderColor bg-surface flex items-center justify-between px-4 md:px-8 select-none">
+      <div className="flex items-center gap-3">
+        {/* Hamburger Menu on Mobile */}
+        <button
+          onClick={onToggleSidebar}
+          className="p-2 -ml-2 text-textSecondary hover:text-textPrimary rounded-full hover:bg-background md:hidden cursor-pointer"
+          title="Toggle Navigation Menu"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+
+        {/* Title */}
+        <h1 className="font-semibold text-base md:text-lg text-textPrimary tracking-tight">
+          {title || 'Dashboard'}
+        </h1>
+      </div>
 
       {/* Actions */}
       <div className="flex items-center gap-6">
