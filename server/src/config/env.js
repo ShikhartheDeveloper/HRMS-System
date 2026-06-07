@@ -28,7 +28,9 @@ const envVarsSchema = Joi.object({
   AWS_ACCESS_KEY_ID: Joi.string().allow('').default(''),
   AWS_SECRET_ACCESS_KEY: Joi.string().allow('').default(''),
   AWS_REGION: Joi.string().default('ap-south-1'),
-  AWS_S3_BUCKET: Joi.string().default('hrms-uploads')
+  AWS_S3_BUCKET: Joi.string().default('hrms-uploads'),
+  CLIENT_URL: Joi.string().uri().default('https://hrms-system-qkyv.onrender.com'),
+  SERVER_BASE_URL: Joi.string().uri().default('https://hrms-system-qkyv.onrender.com')
 }).unknown();
 
 const { value: envVars, error } = envVarsSchema.validate(process.env);
@@ -37,9 +39,15 @@ if (error) {
   throw new Error(`Config validation error: ${error.message}`);
 }
 
+// Populate process.env with Joi defaults
+process.env.CLIENT_URL = envVars.CLIENT_URL;
+process.env.SERVER_BASE_URL = envVars.SERVER_BASE_URL;
+
 export const env = {
   env: envVars.NODE_ENV,
   port: envVars.PORT,
+  clientUrl: envVars.CLIENT_URL,
+  serverBaseUrl: envVars.SERVER_BASE_URL,
   mongoose: {
     uri: envVars.MONGODB_URI,
     options: {}
