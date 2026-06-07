@@ -21,6 +21,7 @@ const envVarsSchema = Joi.object({
   EMAIL_PASS: Joi.string().description('Fallback SMTP password (Render compat)'),
   FROM_EMAIL: Joi.string().email({ tlds: { allow: false } }).default('no-reply@hrms.local'),
   RESEND_API_KEY: Joi.string().allow('').default(''),
+  RESEND_FROM_EMAIL: Joi.string().allow('').default('HRMS System <onboarding@resend.dev>'),
   AWS_ACCESS_KEY_ID: Joi.string().allow('').default(''),
   AWS_SECRET_ACCESS_KEY: Joi.string().allow('').default(''),
   AWS_REGION: Joi.string().default('ap-south-1'),
@@ -48,6 +49,7 @@ export const env = {
   },
   email: {
     resendApiKey: envVars.RESEND_API_KEY || '',
+    resendFrom: envVars.RESEND_FROM_EMAIL || 'HRMS System <onboarding@resend.dev>',
     smtp: {
       host: envVars.SMTP_HOST || 'smtp.gmail.com',
       port: envVars.SMTP_PORT || 587,
