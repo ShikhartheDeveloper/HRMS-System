@@ -22,6 +22,9 @@ const envVarsSchema = Joi.object({
   FROM_EMAIL: Joi.string().email({ tlds: { allow: false } }).default('no-reply@hrms.local'),
   RESEND_API_KEY: Joi.string().allow('').default(''),
   RESEND_FROM_EMAIL: Joi.string().allow('').default('HRMS System <onboarding@resend.dev>'),
+  BREVO_API_KEY: Joi.string().allow('').default(''),
+  BREVO_FROM_EMAIL: Joi.string().allow('').default(''),
+  BREVO_FROM_NAME: Joi.string().allow('').default('HRMS System'),
   AWS_ACCESS_KEY_ID: Joi.string().allow('').default(''),
   AWS_SECRET_ACCESS_KEY: Joi.string().allow('').default(''),
   AWS_REGION: Joi.string().default('ap-south-1'),
@@ -50,6 +53,11 @@ export const env = {
   email: {
     resendApiKey: envVars.RESEND_API_KEY || '',
     resendFrom: envVars.RESEND_FROM_EMAIL || 'HRMS System <onboarding@resend.dev>',
+    brevo: {
+      apiKey: envVars.BREVO_API_KEY || '',
+      fromEmail: envVars.BREVO_FROM_EMAIL || '',
+      fromName: envVars.BREVO_FROM_NAME || 'HRMS System'
+    },
     smtp: {
       host: envVars.SMTP_HOST || 'smtp.gmail.com',
       port: envVars.SMTP_PORT || 587,

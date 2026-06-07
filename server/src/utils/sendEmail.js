@@ -6,6 +6,9 @@ let transporterVerified = false;
 
 // ── Log email configuration at module load (helps debug Render deployments) ──
 console.log('📬 Email configuration:');
+console.log(`   Brevo API key: ${env.email.brevo.apiKey ? '✅ configured (' + env.email.brevo.apiKey.substring(0, 8) + '...)' : '❌ NOT configured'}`);
+console.log(`   Brevo FROM email: ${env.email.brevo.fromEmail || '(not set)'}`);
+console.log(`   Brevo FROM name: ${env.email.brevo.fromName}`);
 console.log(`   Resend API key: ${env.email.resendApiKey ? '✅ configured (' + env.email.resendApiKey.substring(0, 8) + '...)' : '❌ NOT configured'}`);
 console.log(`   Resend FROM: ${env.email.resendFrom}`);
 console.log(`   SMTP host: ${env.email.smtp.host || '(not set)'}`);
@@ -80,6 +83,57 @@ const getTransporter = async () => {
 };
 
 /**
+ * Send email via Brevo HTTP API.
+ * Returns the result object on success, or null on failure.
+ */
+const sendViaBrevo = async ({ to, subject, text, html }) => {
+  const apiKey = env.email.brevo.apiKey;
+  if (!apiKey) return null;
+
+  const fromEmail = env.email.brevo.fromEmail;
+  const fromName = env.email.brevo.fromName;
+  
+  // Brevo API expects standard 'to' array of { email, name }
+  const recipients = Array.isArray(to) 
+    ? to.map(email => ({ email })) 
+    : [{ email: to }];
+
+  console.log(`📤 Attempting Brevo API → to: ${JSON.stringify(recipients)}, from: ${fromName} <${fromEmail}>`);
+
+  try {
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-key': apiKey,
+        'accept': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { name: fromName, email: fromEmail },
+        to: recipients,
+        subject,
+        textContent: text,
+        htmlContent: html
+      })
+    });
+
+    const responseBody = await response.text();
+
+    if (response.ok) {
+      const data = JSON.parse(responseBody);
+      console.log(`📧 Email sent via Brevo API to ${to} — messageId: ${data.messageId}`);
+      return { messageId: data.messageId };
+    }
+
+    console.error(`❌ Brevo API failed [HTTP ${response.status}]:`, responseBody);
+    return null;
+  } catch (err) {
+    console.error('❌ Brevo API network error:', err.message);
+    return null;
+  }
+};
+
+/**
  * Send email via Resend HTTP API.
  * Returns the result object on success, or null on failure.
  */
@@ -141,8 +195,9 @@ const sendViaResend = async ({ to, subject, text, html }) => {
 /**
  * Sends an email message.
  * Strategy:
- *   1. Try Resend HTTP API (works on Render — uses HTTPS, not SMTP ports)
- *   2. Fall back to SMTP transporter (works locally, blocked on Render free tier)
+ *   1. Try Brevo HTTP API (works on Render — uses HTTPS, bypasses SMTP block)
+ *   2. Try Resend HTTP API (works on Render — uses HTTPS, not SMTP ports)
+ *   3. Fall back to SMTP transporter (works locally, blocked on Render free tier)
  *
  * @param {Object} options
  * @param {string} options.to      - Recipient email
@@ -152,11 +207,15 @@ const sendViaResend = async ({ to, subject, text, html }) => {
  * @returns {Promise<Object|null>} info object with messageId, or null on failure
  */
 export const sendEmail = async ({ to, subject, text, html }) => {
-  // ── 1. Try Resend HTTP API first (bypasses Render SMTP port block) ──
+  // ── 1. Try Brevo HTTP API first (bypasses Render SMTP port block and domain restrictions) ──
+  const brevoResult = await sendViaBrevo({ to, subject, text, html });
+  if (brevoResult) return brevoResult;
+
+  // ── 2. Try Resend HTTP API next ──
   const resendResult = await sendViaResend({ to, subject, text, html });
   if (resendResult) return resendResult;
 
-  // ── 2. SMTP fallback ──
+  // ── 3. SMTP fallback ──
   try {
     const mailTransporter = await getTransporter();
     const info = await mailTransporter.sendMail({
